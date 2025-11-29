@@ -1,6 +1,19 @@
-const Card = ({ image, name, price, farmDirect = true }) => {
+import { useRouter } from "next/router";
+
+const Card = ({ image, name, price, farmDirect = true, productId }) => {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (productId) {
+      router.push(`/products/SelectedPage?id=${productId}`);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    <div 
+      onClick={handleClick}
+      className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+    >
       {/* Product Image */}
       <div className="w-full h-48 sm:h-56 md:h-64 overflow-hidden bg-gray-100">
         <img

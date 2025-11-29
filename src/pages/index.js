@@ -1,17 +1,14 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import Card from "../components/Card";
+import Navbar from "../components/Navbar";
 import { 
-  UserIcon, 
-  BellIcon, 
-  ShoppingCartIcon, 
   MagnifyingGlassIcon, 
   FunnelIcon 
 } from "@heroicons/react/24/outline";
 
 export default function Home() {
-  const [greeting, setGreeting] = useState("");
-  const [userName, setUserName] = useState("");
-  const [userData, setUserData] = useState(null);
+  const router = useRouter();
   const [categories, setCategories] = useState(["ทั้งหมด"]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
@@ -56,67 +53,6 @@ export default function Home() {
     }
   ];
 
-  // Fetch user data from localStorage or API
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        // First, try to get user data from localStorage
-        const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
-
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          setUserData(user);
-          // Use first_name and last_name if available, otherwise use username
-          const displayName = user.username;
-          setUserName(displayName);
-        } else if (token) {
-          // If token exists but no user data, fetch from API
-          const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
-          if (apiUrl) {
-            const response = await fetch(`${apiUrl}/api/users/profile`, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              if (data.data && data.data.user) {
-                const user = data.data.user;
-                setUserData(user);
-                localStorage.setItem('user', JSON.stringify(user));
-                const displayName = user.first_name && user.last_name 
-                  ? `${user.first_name} ${user.last_name}`
-                  : user.username || 'ผู้ใช้';
-                setUserName(displayName);
-              }
-            } else if (response.status === 401) {
-              // Unauthorized - token expired or invalid
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              setUserName('ผู้ใช้');
-            } else {
-              // Token might be invalid, clear it
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              setUserName('ผู้ใช้');
-            }
-          }
-        } else {
-          // No user logged in
-          setUserName('ผู้ใช้');
-        }
-      } catch (error) {
-        console.error('Error loading user data:', error);
-        setUserName('ผู้ใช้');
-      }
-    };
-
-    loadUserData();
-  }, []);
 
   // Fetch categories from API
   useEffect(() => {
@@ -166,27 +102,6 @@ export default function Home() {
     loadCategories();
   }, []);
 
-  useEffect(() => {
-    const getGreeting = () => {
-      const hour = new Date().getHours();
-      if (hour >= 5 && hour < 12) {
-        return "สวัสดีตอนเช้า"; // Good morning
-      } else if (hour >= 12 && hour < 18) {
-        return "สวัสดีตอนบ่าย"; // Good afternoon
-      } else {
-        return "สวัสดีตอนเย็น"; // Good evening
-      }
-    };
-    
-    setGreeting(getGreeting());
-    
-    // Update greeting every minute (optional)
-    const interval = setInterval(() => {
-      setGreeting(getGreeting());
-    }, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
 
   // Auto-slide functionality for promotional banner
   useEffect(() => {
@@ -202,41 +117,10 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Top Header Section */}
-      <div className="bg-white px-4 sm:px-6 pt-4 sm:pt-6 pb-4">
-        <div className="flex items-center justify-between mb-4">
-          {/* User Profile Section */}
-          <div className="flex items-center gap-3">
-            {/* Profile Picture */}
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-              <UserIcon className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
-            </div>
-            
-            {/* User Name and Greeting */}
-            <div className="flex flex-col">
-              <h2 className="text-lg sm:text-xl font-semibold text-black">สวัสดี {userName}</h2>
-              <p className="text-xs sm:text-sm text-gray-600">{greeting}</p>
-            </div>
-          </div>
-
-          {/* Action Icons */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Notification Bell Icon */}
-            <button className="relative p-2 text-gray-600 hover:text-gray-800">
-              <BellIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-              {/* Notification Badge */}
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-
-            {/* Shopping Cart Icon */}
-            <button className="relative p-2 text-gray-600 hover:text-gray-800">
-              <ShoppingCartIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-              {/* Cart Badge */}
-              <span className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full"></span>
-            </button>
-          </div>
-        </div>
+      <Navbar />
 
         {/* Search Bar */}
+      <div className="bg-white px-4 sm:px-6 pb-4">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
             <input
@@ -271,7 +155,14 @@ export default function Home() {
             {categories.map((category) => (
               <button
                 key={category}
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => {
+                  if (category === "ทั้งหมด") {
+                    setSelectedCategory(category);
+                  } else {
+                    // Navigate to ProductPage with category filter
+                    router.push(`/products/ProductPage?category=${encodeURIComponent(category)}`);
+                  }
+                }}
                 className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg font-medium text-sm sm:text-base whitespace-nowrap transition-all ${
                   selectedCategory === category
                     ? "bg-orange-500 text-white"
