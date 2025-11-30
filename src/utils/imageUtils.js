@@ -105,3 +105,39 @@ export const validateImageFile = (file, maxSizeMB = 5) => {
   };
 };
 
+/**
+ * Get proper image path for static assets
+ * Handles encoding for special characters and ensures correct path format
+ * @param {string} imagePath - Image path (e.g., "/images/filename.jpg")
+ * @returns {string} - Properly formatted image path
+ */
+export const getImagePath = (imagePath) => {
+  if (!imagePath) return '/images/example.jpg';
+  
+  // If it's already a data URL (base64), return as is
+  if (imagePath.startsWith('data:')) {
+    return imagePath;
+  }
+  
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // Ensure it starts with /
+  const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  
+  // For static files in Next.js public folder, encode only the filename part
+  // This handles special characters like Thai characters in filenames
+  const pathParts = normalizedPath.split('/');
+  if (pathParts.length > 0) {
+    const filename = pathParts[pathParts.length - 1];
+    const directory = pathParts.slice(0, -1).join('/');
+    // Encode the filename to handle special characters
+    const encodedFilename = encodeURIComponent(filename);
+    return `${directory}/${encodedFilename}`;
+  }
+  
+  return normalizedPath;
+};
+

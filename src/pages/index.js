@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Card from "../components/Card";
 import Navbar from "../components/Navbar";
 import SearchBar from "../components/SearchBar";
+import { getImagePath } from "../utils/imageUtils";
 
 export default function Home() {
   const router = useRouter();
@@ -18,9 +19,9 @@ export default function Home() {
 
   // Promotional banner images - update these paths with your actual image filenames
   const promotionalImages = [
-    "/images/promotion1.png",
-    "/images/promotion2.png",
-    "/images/promotion3.png",
+    getImagePath("/images/promotion1.png"),
+    getImagePath("/images/promotion2.png"),
+    getImagePath("/images/promotion3.png"),
   ];
 
   // Default popular fruits (fallback when user has no orders)
@@ -29,28 +30,28 @@ export default function Home() {
       id: 1,
       name: "มะละกอ",
       price: "20",
-      image: "/images/example.jpg",
+      image: getImagePath("/images/example.jpg"),
       farmDirect: true
     },
     {
       id: 2,
       name: "แก้วมังกร",
       price: "50",
-      image: "/images/แก้วมังกร.jpg",
+      image: getImagePath("/images/แก้วมังกร.jpg"),
       farmDirect: true
     },
     {
       id: 3,
       name: "กล้วย",
       price: "15",
-      image: "/images/example.jpg",
+      image: getImagePath("/images/example.jpg"),
       farmDirect: true
     },
     {
       id: 4,
       name: "แตงโม",
       price: "30",
-      image: "/images/example.jpg",
+      image: getImagePath("/images/example.jpg"),
       farmDirect: true
     }
   ];

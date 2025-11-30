@@ -83,7 +83,7 @@ const LoginPage = () => {
                 {/* Fruit Illustration */}
                 <div className="mb-4 sm:mb-6">
                     <img 
-                        src="/images/logo.png" 
+                        src="/images/Logo.png" 
                         alt="แก้วมังกร" 
                         className="w-full h-full object-cover"
                     />
