@@ -25,7 +25,7 @@ export const addToCart = (product) => {
         id: product.id,
         name: product.name,
         price: product.price,
-        image_url: product.image_url,
+        image: product.image,
         stock: product.stock,
         quantity: 1
       });

@@ -64,7 +64,7 @@ const Button = ({
   };
 
   // Base styles
-  const baseStyles = 'font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2';
+  const baseStyles = 'font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg';
 
   // Disabled styles
   const disabledStyles = 'bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300 hover:from-orange-400 hover:to-orange-500';

@@ -9,6 +9,7 @@ import {
     LockClosedIcon
 } from "@heroicons/react/24/outline";
 import Button from "../../components/Button";
+import Modal from "../../components/Modal";
 
 const RegisterPage = () => {
     const router = useRouter();
@@ -117,28 +118,14 @@ const RegisterPage = () => {
                 {/* Fruit Illustration */}
                 <div className="mb-4 sm:mb-6">
                     <img 
-                        src="/images/แก้วมังกร.jpg" 
+                        src="/images/logo.png" 
                         alt="แก้วมังกร" 
-                        className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32"
+                        className="w-full h-full object-cover"
                     />
                 </div>
 
                 {/* Title */}
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black mb-6 sm:mb-8 text-center">สมัครสมาชิก</h1>
-
-                {/* Error Message */}
-                {error && (
-                    <div className="w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm sm:text-base">
-                        {error}
-                    </div>
-                )}
-
-                {/* Success Message */}
-                {success && (
-                    <div className="w-full bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm sm:text-base">
-                        {success}
-                    </div>
-                )}
 
                 {/* Form */}
                 <form className="w-full flex flex-col gap-4 sm:gap-5 md:gap-6" onSubmit={handleSubmit}>
@@ -146,9 +133,9 @@ const RegisterPage = () => {
                     <div className="flex flex-col gap-2">
                         <label htmlFor="firstname" className="text-black font-medium text-sm sm:text-base">ชื่อจริง</label>
                         <div className="relative">
-                            <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <UserIcon className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 md:w-6 md:h-6 text-gray-400 pointer-events-none" />
                             <input 
-                                className="border-2 border-gray-300 rounded-lg p-2.5 sm:p-3 md:p-3.5 w-full pl-10 sm:pl-11 text-sm sm:text-base focus:outline-none focus:border-orange-400" 
+                                className="border-2 border-gray-300 rounded-lg p-2.5 sm:p-3 md:p-3.5 w-full pl-10 sm:pl-11 md:pl-12 lg:pl-14 text-sm sm:text-base focus:outline-none focus:border-orange-400" 
                                 type="text" 
                                 id="firstname"
                                 name="firstname"
@@ -163,9 +150,9 @@ const RegisterPage = () => {
                     <div className="flex flex-col gap-2">
                         <label htmlFor="lastname" className="text-black font-medium text-sm sm:text-base">นามสกุล</label>
                         <div className="relative">
-                            <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <UserIcon className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 md:w-6 md:h-6 text-gray-400 pointer-events-none" />
                             <input 
-                                className="border-2 border-gray-300 rounded-lg p-2.5 sm:p-3 md:p-3.5 w-full pl-10 sm:pl-11 text-sm sm:text-base focus:outline-none focus:border-orange-400" 
+                                className="border-2 border-gray-300 rounded-lg p-2.5 sm:p-3 md:p-3.5 w-full pl-10 sm:pl-11 md:pl-12 lg:pl-14 text-sm sm:text-base focus:outline-none focus:border-orange-400" 
                                 type="text" 
                                 id="lastname"
                                 name="lastname"
@@ -180,9 +167,9 @@ const RegisterPage = () => {
                     <div className="flex flex-col gap-2">
                         <label htmlFor="username" className="text-black font-medium text-sm sm:text-base">ชื่อผู้ใช้</label>
                         <div className="relative">
-                            <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <UserIcon className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 md:w-6 md:h-6 text-gray-400 pointer-events-none" />
                             <input 
-                                className="border-2 border-gray-300 rounded-lg p-2.5 sm:p-3 md:p-3.5 w-full pl-10 sm:pl-11 text-sm sm:text-base focus:outline-none focus:border-orange-400" 
+                                className="border-2 border-gray-300 rounded-lg p-2.5 sm:p-3 md:p-3.5 w-full pl-10 sm:pl-11 md:pl-12 lg:pl-14 text-sm sm:text-base focus:outline-none focus:border-orange-400" 
                                 type="text" 
                                 id="username"
                                 name="username"
@@ -196,9 +183,9 @@ const RegisterPage = () => {
                     <div className="flex flex-col gap-2">
                         <label htmlFor="email" className="text-black font-medium text-sm sm:text-base">อีเมล</label>
                         <div className="relative">
-                            <EnvelopeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <EnvelopeIcon className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 md:w-6 md:h-6 text-gray-400 pointer-events-none" />
                             <input 
-                                className="border-2 border-gray-300 rounded-lg p-2.5 sm:p-3 md:p-3.5 w-full pl-10 sm:pl-11 text-sm sm:text-base focus:outline-none focus:border-orange-400" 
+                                className="border-2 border-gray-300 rounded-lg p-2.5 sm:p-3 md:p-3.5 w-full pl-10 sm:pl-11 md:pl-12 lg:pl-14 text-sm sm:text-base focus:outline-none focus:border-orange-400" 
                                 type="email" 
                                 id="email"
                                 name="email"
@@ -213,9 +200,9 @@ const RegisterPage = () => {
                     <div className="flex flex-col gap-2">
                         <label htmlFor="password" className="text-black font-medium text-sm sm:text-base">รหัสผ่าน</label>
                         <div className="relative">
-                            <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <LockClosedIcon className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 md:w-6 md:h-6 text-gray-400 pointer-events-none" />
                             <input 
-                                className={`border-2 rounded-lg p-2.5 sm:p-3 md:p-3.5 w-full pl-10 sm:pl-11 text-sm sm:text-base focus:outline-none ${
+                                className={`border-2 rounded-lg p-2.5 sm:p-3 md:p-3.5 w-full pl-10 sm:pl-11 md:pl-12 lg:pl-14 text-sm sm:text-base focus:outline-none ${
                                     userdata.password && !isPasswordValid 
                                         ? 'border-red-400 focus:border-red-500' 
                                         : userdata.password && isPasswordValid
@@ -284,6 +271,29 @@ const RegisterPage = () => {
                     </div>
                 </form>
             </div>
+
+            {/* Error Modal */}
+            <Modal
+                isOpen={!!error}
+                onClose={() => setError('')}
+                type="error"
+                title="การลงทะเบียนไม่สำเร็จ"
+                message={error}
+                buttonText="ปิด"
+            />
+
+            {/* Success Modal */}
+            <Modal
+                isOpen={!!success}
+                onClose={() => {
+                    setSuccess('');
+                    router.push('/registration/LoginPage');
+                }}
+                type="success"
+                title="ลงทะเบียนสำเร็จ"
+                message={success}
+                buttonText="ไปหน้าเข้าสู่ระบบ"
+            />
         </div>
     );
 }

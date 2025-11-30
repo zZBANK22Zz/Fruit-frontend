@@ -5,6 +5,7 @@ import {
   TrashIcon
 } from "@heroicons/react/24/outline";
 import { getCart, removeFromCart, updateCartItemQuantity, getCartTotal, clearCart } from "../../utils/cartUtils";
+import { notifySuccess } from "../../utils/notificationUtils";
 
 export default function CartPage() {
   const router = useRouter();
@@ -84,6 +85,14 @@ export default function CartPage() {
         const data = await response.json();
         if (data.data && data.data.order) {
           const orderId = data.data.order.id;
+          const totalAmount = data.data.order.total_amount || getCartTotal();
+          
+          // Add success notification
+          notifySuccess(
+            'สั่งซื้อสำเร็จ',
+            `ออเดอร์ของคุณ #${orderId} ถูกสร้างเรียบร้อยแล้ว กรุณาชำระเงิน ${parseFloat(totalAmount).toFixed(2)} บาท`
+          );
+          
           // Clear cart after successful order creation
           clearCart();
           // Redirect to payment page with order ID
@@ -110,28 +119,31 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-white flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="sticky top-0 bg-white z-10 px-4 py-3 flex items-center justify-between border-b border-gray-100">
+      <div className="sticky top-0 bg-white/95 backdrop-blur-md z-10 px-4 py-4 flex items-center justify-between border-b border-gray-200 shadow-sm">
         <button
           onClick={() => router.back()}
-          className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-orange-50 rounded-xl transition-all duration-300 transform hover:scale-110 active:scale-95"
         >
           <ArrowLeftIcon className="w-6 h-6" />
         </button>
         
-        <h1 className="text-lg font-semibold text-black">ตะกร้าสินค้า</h1>
+        <h1 className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
+          <span className="w-1 h-6 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></span>
+          ตะกร้าสินค้า
+        </h1>
         
         <div className="w-10"></div> {/* Spacer for centering */}
       </div>
 
       {/* Cart Items Section */}
-      <div className="flex-1 overflow-y-auto pb-24">
+      <div className="flex-1 overflow-y-auto pb-32">
         {cartItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full px-4 py-12">
-            <div className="text-gray-400 mb-4">
+          <div className="flex flex-col items-center justify-center h-full px-4 py-16">
+            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center mb-6 shadow-lg">
               <svg
-                className="w-24 h-24"
+                className="w-16 h-16 text-orange-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -144,26 +156,30 @@ export default function CartPage() {
                 />
               </svg>
             </div>
-            <p className="text-gray-500 text-lg mb-2">ตะกร้าของคุณว่างเปล่า</p>
+            <p className="text-gray-600 text-xl font-bold mb-2">ตะกร้าของคุณว่างเปล่า</p>
+            <p className="text-gray-500 text-sm mb-6">เริ่มเพิ่มสินค้าลงตะกร้ากันเลย!</p>
             <button
               onClick={() => router.push('/')}
-              className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors mt-4"
+              className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
             >
               ไปช้อปปิ้ง
             </button>
           </div>
         ) : (
-          <div className="px-4 py-4">
-            {cartItems.map((item) => (
+          <div className="px-4 py-6">
+            {cartItems.map((item, index) => (
               <div
                 key={item.id}
-                className="bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm"
+                className="bg-white border-2 border-gray-100 rounded-2xl p-4 mb-4 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+                style={{ animationDelay: `${index * 50}ms` }}
               >
                 <div className="flex gap-4">
                   {/* Product Image */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 shadow-sm">
                     <img
-                      src={item.image_url || '/images/example.jpg'}
+                      src={item.image 
+                        ? `data:image/jpeg;base64,${item.image}` 
+                        : '/images/example.jpg'}
                       alt={item.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -174,47 +190,56 @@ export default function CartPage() {
 
                   {/* Product Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-black mb-1 truncate">
+                    <h3 className="text-lg font-bold text-gray-900 mb-1 truncate">
                       {item.name}
                     </h3>
-                    <p className="text-lg font-bold text-orange-500 mb-3">
-                      {item.price} บาท
-                    </p>
+                    <div className="flex items-baseline gap-2 mb-3">
+                      <p className="text-xl font-extrabold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                        {item.price}
+                      </p>
+                      <span className="text-sm text-gray-500">บาท</span>
+                    </div>
 
                     {/* Quantity Controls */}
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                        className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <span className="text-gray-600 font-semibold">−</span>
-                      </button>
-                      
-                      <span className="text-base font-medium text-black min-w-[2rem] text-center">
-                        {item.quantity}
-                      </span>
-                      
-                      <button
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                        disabled={item.stock && item.quantity >= item.stock}
-                        className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="text-gray-600 font-semibold">+</span>
-                      </button>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-1 border-2 border-gray-200">
+                        <button
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white hover:shadow-md transition-all duration-200 transform hover:scale-110 active:scale-95"
+                        >
+                          <span className="text-gray-700 font-bold">−</span>
+                        </button>
+                        
+                        <span className="text-base font-bold text-gray-900 min-w-[2rem] text-center">
+                          {item.quantity}
+                        </span>
+                        
+                        <button
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                          disabled={item.stock && item.quantity >= item.stock}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white hover:shadow-md transition-all duration-200 transform hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <span className="text-gray-700 font-bold">+</span>
+                        </button>
+                      </div>
 
                       {/* Remove Button */}
                       <button
                         onClick={() => handleRemoveItem(item.id)}
-                        className="ml-auto p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="ml-auto p-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 transform hover:scale-110 active:scale-95"
                       >
                         <TrashIcon className="w-5 h-5" />
                       </button>
                     </div>
 
                     {/* Subtotal */}
-                    <p className="text-sm text-gray-600 mt-2">
-                      รวม: {(item.price * item.quantity).toFixed(2)} บาท
-                    </p>
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-sm text-gray-600">
+                        รวม: <span className="font-bold text-lg bg-gradient-to-r from-orange-600 to-orange-700 bg-clip-text text-transparent">
+                          {(item.price * item.quantity).toFixed(2)} บาท
+                        </span>
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -225,18 +250,18 @@ export default function CartPage() {
 
       {/* Bottom Summary Bar */}
       {cartItems.length > 0 && (
-        <div className="bg-white border-t border-gray-200 mt-auto">
-          <div className="px-4 py-4">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-semibold text-black">ยอดรวมทั้งหมด</span>
-              <span className="text-2xl font-bold text-orange-500">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t-2 border-gray-200 shadow-2xl z-40">
+          <div className="px-4 py-5">
+            <div className="flex items-center justify-between mb-4 px-2">
+              <span className="text-lg font-bold text-gray-700">ยอดรวมทั้งหมด</span>
+              <span className="text-3xl font-extrabold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
                 {totalAmount.toFixed(2)} บาท
               </span>
             </div>
             
             <button
               onClick={handleCheckout}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-colors"
+              className="w-full bg-gradient-to-r from-orange-500 via-orange-500 to-orange-600 hover:from-orange-600 hover:via-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98]"
             >
               ดำเนินการสั่งซื้อ
             </button>
