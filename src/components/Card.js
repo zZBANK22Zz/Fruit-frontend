@@ -39,8 +39,8 @@ const Card = ({ image, name, price, farmDirect = true, productId }) => {
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-2">
           <p className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-            ${price}
-          </p>
+          ${price}
+        </p>
           <span className="text-xs text-gray-500">บาท</span>
         </div>
 
@@ -51,8 +51,8 @@ const Card = ({ image, name, price, farmDirect = true, productId }) => {
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
             <p className="text-xs font-medium text-orange-700">
-              ส่งตรงจากสวน
-            </p>
+            ส่งตรงจากสวน
+          </p>
           </div>
         )}
       </div>

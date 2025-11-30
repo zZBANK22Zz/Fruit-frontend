@@ -1,12 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Card from "../components/Card";
 import Navbar from "../components/Navbar";
-import { 
-  MagnifyingGlassIcon, 
-  FunnelIcon,
-  XMarkIcon
-} from "@heroicons/react/24/outline";
+import SearchBar from "../components/SearchBar";
 
 export default function Home() {
   const router = useRouter();
@@ -16,11 +12,9 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("");
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
-  const filterDropdownRef = useRef(null);
 
   // Promotional banner images - update these paths with your actual image filenames
   const promotionalImages = [
@@ -137,7 +131,7 @@ export default function Home() {
           } else {
             setProducts([]);
           }
-        } else {
+      } else {
           console.error('Failed to fetch products:', response.status);
           setProducts([]);
         }
@@ -148,7 +142,7 @@ export default function Home() {
         setProductsLoading(false);
       }
     };
-
+    
     loadProducts();
   }, []);
 
@@ -173,19 +167,6 @@ export default function Home() {
     setFilteredProducts(filtered);
   }, [searchQuery, selectedCategoryFilter, products]);
 
-  // Close filter dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
-        setShowFilterDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
 
   // Auto-slide functionality for promotional banner
@@ -201,135 +182,16 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50/30 via-white to-white">
-      {/* Top Header Section */}
-      <Navbar />
-
-        {/* Search Bar */}
-      <div className="bg-white/80 backdrop-blur-sm px-4 sm:px-6 pb-4 sticky top-0 z-10 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 relative group">
-            <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ค้นหาสินค้า..."
-              className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 text-sm sm:text-base transition-all duration-300 bg-white shadow-sm hover:shadow-md"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all"
-              >
-                <XMarkIcon className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-          
-          {/* Filter Icon with Dropdown */}
-          <div className="relative" ref={filterDropdownRef}>
-            <button 
-              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className={`p-3 border-2 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
-                selectedCategoryFilter 
-                  ? "border-orange-400 bg-orange-50" 
-                  : "border-gray-200 hover:border-orange-400 hover:bg-orange-50"
-              }`}
-            >
-              <FunnelIcon className={`w-5 h-5 sm:w-6 sm:h-6 ${selectedCategoryFilter ? "text-orange-600" : "text-gray-600"}`} />
-            </button>
-            
-            {/* Filter Dropdown */}
-            {showFilterDropdown && (
-              <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl border-2 border-gray-200 z-50 overflow-hidden animate-slide-in-right">
-                <div className="p-3 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
-                  <h3 className="text-sm font-bold text-gray-900">กรองตามหมวดหมู่</h3>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {categories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => {
-                        setSelectedCategoryFilter(category === "ทั้งหมด" ? "" : category);
-                        setShowFilterDropdown(false);
-                      }}
-                      className={`w-full px-4 py-3 text-left text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                        (category === "ทั้งหมด" && !selectedCategoryFilter) || selectedCategoryFilter === category
-                          ? "bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 font-bold"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      {category === "ทั้งหมด" ? (
-                        <>
-                          <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                          <span>ทั้งหมด</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className={`w-2 h-2 rounded-full ${selectedCategoryFilter === category ? "bg-orange-500" : "bg-gray-300"}`}></span>
-                          <span>{category}</span>
-                        </>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                {selectedCategoryFilter && (
-                  <div className="p-3 border-t border-gray-200 bg-gray-50">
-                    <button
-                      onClick={() => {
-                        setSelectedCategoryFilter("");
-                        setShowFilterDropdown(false);
-                      }}
-                      className="w-full text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center justify-center gap-2"
-                    >
-                      <XMarkIcon className="w-4 h-4" />
-                      ล้างตัวกรอง
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Active Filters Display */}
-        {(selectedCategoryFilter || searchQuery.trim() !== "") && (
-          <div className="mt-3 flex flex-wrap gap-2 items-center">
-            {selectedCategoryFilter && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium border border-orange-200">
-                หมวดหมู่: {selectedCategoryFilter}
-                <button
-                  onClick={() => setSelectedCategoryFilter("")}
-                  className="hover:text-orange-900"
-                >
-                  <XMarkIcon className="w-4 h-4" />
-                </button>
-              </span>
-            )}
-            {searchQuery.trim() !== "" && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium border border-blue-200">
-                ค้นหา: {searchQuery}
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="hover:text-blue-900"
-                >
-                  <XMarkIcon className="w-4 h-4" />
-                </button>
-              </span>
-            )}
-            {(selectedCategoryFilter || searchQuery.trim() !== "") && (
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategoryFilter("");
-                }}
-                className="text-sm text-gray-600 hover:text-gray-800 font-medium underline"
-              >
-                ล้างทั้งหมด
-              </button>
-            )}
-          </div>
-        )}
+      {/* Combined Navbar and Search Bar - Sticky Header */}
+      <div className="bg-white/95 backdrop-blur-md sticky top-0 z-20 border-b border-gray-100 shadow-sm">
+        <Navbar />
+        <SearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedCategoryFilter={selectedCategoryFilter}
+          setSelectedCategoryFilter={setSelectedCategoryFilter}
+          categories={categories}
+        />
       </div>
 
       {/* Category Section */}
@@ -439,7 +301,7 @@ export default function Home() {
             ) : (
               "ผลไม้ยอดฮิต"
             )}
-          </h2>
+        </h2>
         </div>
         
         {productsLoading ? (
@@ -456,14 +318,14 @@ export default function Home() {
           </div>
         ) : (searchQuery || selectedCategoryFilter) ? (
           filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
               {filteredProducts.map((product, index) => (
                 <div 
                   key={product.id}
                   className="animate-fade-in"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <Card
+            <Card
                     productId={product.id}
                     image={product.image ? `data:image/jpeg;base64,${product.image}` : '/images/example.jpg'}
                     name={product.name}
@@ -495,20 +357,20 @@ export default function Home() {
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
             {popularFruits.map((fruit, index) => (
               <div 
-                key={fruit.id}
+              key={fruit.id}
                 className="animate-fade-in"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <Card
-                  image={fruit.image}
-                  name={fruit.name}
-                  price={fruit.price}
-                  farmDirect={fruit.farmDirect}
+              image={fruit.image}
+              name={fruit.name}
+              price={fruit.price}
+              farmDirect={fruit.farmDirect}
                   productId={fruit.id}
-                />
+            />
               </div>
-            ))}
-          </div>
+          ))}
+        </div>
         )}
       </div>
     </div>

@@ -329,7 +329,7 @@ export default function Navbar({ showBackButton = false }) {
   };
 
   return (
-    <div className="bg-white/95 backdrop-blur-md px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-gray-100 shadow-sm">
+    <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
       <div className="flex items-center justify-between mb-4">
         {/* User Profile Section */}
         <div className="flex items-center gap-3">
