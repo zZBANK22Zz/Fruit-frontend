@@ -18,13 +18,13 @@ export default function Home() {
 
   // Promotional banner images - update these paths with your actual image filenames
   const promotionalImages = [
-    "/images/example.jpg",
-    "/images/แก้วมังกร.jpg",
-    "/images/example.jpg"
+    "/images/promotion1.png",
+    "/images/promotion2.png",
+    "/images/promotion3.png",
   ];
 
-  // Popular fruits data
-  const popularFruits = [
+  // Default popular fruits (fallback when user has no orders)
+  const defaultPopularFruits = [
     {
       id: 1,
       name: "มะละกอ",
@@ -54,6 +54,10 @@ export default function Home() {
       farmDirect: true
     }
   ];
+
+  const [popularFruits, setPopularFruits] = useState(defaultPopularFruits);
+  const [popularFruitsLoading, setPopularFruitsLoading] = useState(true);
+  const [isShowingUserProducts, setIsShowingUserProducts] = useState(false);
 
 
   // Fetch categories from API
@@ -131,7 +135,7 @@ export default function Home() {
           } else {
             setProducts([]);
           }
-      } else {
+        } else {
           console.error('Failed to fetch products:', response.status);
           setProducts([]);
         }
@@ -142,8 +146,68 @@ export default function Home() {
         setProductsLoading(false);
       }
     };
-    
+
     loadProducts();
+  }, []);
+
+  // Fetch user's most frequently bought products
+  useEffect(() => {
+    const loadMostBoughtProducts = async () => {
+      try {
+        setPopularFruitsLoading(true);
+        const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+        const token = localStorage.getItem('token');
+        
+        if (!apiUrl || !token) {
+          // If no token, use default products
+          setPopularFruits(defaultPopularFruits);
+          setIsShowingUserProducts(false);
+          setPopularFruitsLoading(false);
+          return;
+        }
+
+        const response = await fetch(`${apiUrl}/api/orders/most-bought?limit=4`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data && data.data.products && data.data.products.length > 0) {
+            // Transform API response to match Card component format
+            const transformedProducts = data.data.products.map(product => ({
+              id: product.id,
+              name: product.name,
+              price: typeof product.price === 'number' ? product.price.toString() : product.price,
+              image: product.image ? `data:image/jpeg;base64,${product.image}` : '/images/example.jpg',
+              farmDirect: true
+            }));
+            setPopularFruits(transformedProducts);
+            setIsShowingUserProducts(true);
+          } else {
+            // If user has no orders, use default products
+            setPopularFruits(defaultPopularFruits);
+            setIsShowingUserProducts(false);
+          }
+        } else {
+          // If API fails, use default products
+          setPopularFruits(defaultPopularFruits);
+          setIsShowingUserProducts(false);
+        }
+      } catch (error) {
+        console.error('Error loading most bought products:', error);
+        // On error, use default products
+        setPopularFruits(defaultPopularFruits);
+      } finally {
+        setPopularFruitsLoading(false);
+      }
+    };
+
+    loadMostBoughtProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter products based on search query and category filter
@@ -238,9 +302,13 @@ export default function Home() {
 
       {/* Promotional Banner Slider */}
       <div className="px-4 sm:px-6 py-6 sm:py-8">
-        <div className="relative overflow-hidden rounded-2xl w-full shadow-xl">
+        <div className="relative overflow-hidden rounded-lg w-full group">
+          {/* Decorative gradient orbs */}
+          <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-orange-400/20 to-transparent rounded-full blur-3xl z-0 animate-pulse"></div>
+          <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-orange-500/20 to-transparent rounded-full blur-3xl z-0 animate-pulse" style={{ animationDelay: '1s' }}></div>
+          
           <div 
-            className="flex flex-nowrap transition-transform duration-700 ease-in-out"
+            className="flex flex-nowrap transition-transform duration-700 ease-in-out relative z-10"
             style={{ 
               transform: `translateX(-${currentSlide * (100 / promotionalImages.length)}%)`,
               width: `${promotionalImages.length * 100}%`
@@ -249,37 +317,77 @@ export default function Home() {
             {promotionalImages.map((image, index) => (
               <div
                 key={index}
-                className="shrink-0 relative bg-gradient-to-br from-orange-100 to-orange-200"
+                className="shrink-0 relative bg-gradient-to-br from-orange-100 via-orange-50 to-orange-200 overflow-hidden group/item"
                 style={{ width: `${100 / promotionalImages.length}%` }}
               >
-                <img
-                  src={image}
-                  alt={`Promotion ${index + 1}`}
-                  className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover"
-                  onError={(e) => {
-                    console.error('Image failed to load:', image);
-                    e.target.style.display = 'none';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                <div className="relative h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 overflow-hidden">
+                  <img
+                    src={image}
+                    alt={`Promotion ${index + 1}`}
+                    className="w-full h-full object-cover transform group-hover/item:scale-110 transition-transform duration-700 ease-out"
+                    onError={(e) => {
+                      console.error('Image failed to load:', image);
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                  {/* Enhanced gradient overlays */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-transparent to-orange-500/10"></div>
+                  
+                  {/* Shine effect on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover/item:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+                </div>
+                
+                {/* Content overlay area (for future promotional text) */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 z-20">
+                  <div className="max-w-2xl">
+                    {/* Add promotional text here if needed */}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
           
-          {/* Navigation Dots */}
+          {/* Enhanced Navigation Dots */}
           {promotionalImages.length > 1 && (
-            <div className="flex justify-center gap-2 mt-5">
+            <div className="flex justify-center items-center gap-3 mt-6 relative z-20">
               {promotionalImages.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`h-2.5 rounded-full transition-all duration-300 hover:scale-125 ${
-                    currentSlide === index ? 'bg-orange-500 w-8 shadow-md shadow-orange-200' : 'bg-gray-300 w-2 hover:bg-gray-400'
+                  className={`rounded-full transition-all duration-300 hover:scale-125 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 ${
+                    currentSlide === index 
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 w-10 h-3 shadow-lg shadow-orange-200' 
+                      : 'bg-gray-300 w-3 h-3 hover:bg-gray-400 hover:w-4'
                   }`}
                   aria-label={`Go to slide ${index + 1}`}
                 />
               ))}
             </div>
+          )}
+          
+          {/* Previous/Next Navigation Arrows */}
+          {promotionalImages.length > 1 && (
+            <>
+              <button
+                onClick={() => setCurrentSlide((currentSlide - 1 + promotionalImages.length) % promotionalImages.length)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-xl hover:bg-white hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                aria-label="Previous slide"
+              >
+                <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setCurrentSlide((currentSlide + 1) % promotionalImages.length)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-xl hover:bg-white hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                aria-label="Next slide"
+              >
+                <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -299,7 +407,7 @@ export default function Home() {
                 )}
               </>
             ) : (
-              "ผลไม้ยอดฮิต"
+              popularFruitsLoading ? "ผลไม้ยอดฮิต" : (isShowingUserProducts ? "สินค้าที่คุณซื้อบ่อย" : "ผลไม้ยอดฮิต")
             )}
         </h2>
         </div>
@@ -353,24 +461,36 @@ export default function Home() {
               </button>
             </div>
           )
+        ) : popularFruitsLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse border border-gray-100">
+                <div className="w-full h-48 sm:h-56 md:h-64 bg-gradient-to-br from-gray-200 to-gray-300"></div>
+                <div className="p-4 sm:p-5">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
             {popularFruits.map((fruit, index) => (
               <div 
-              key={fruit.id}
+                key={fruit.id}
                 className="animate-fade-in"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <Card
-              image={fruit.image}
-              name={fruit.name}
-              price={fruit.price}
-              farmDirect={fruit.farmDirect}
                   productId={fruit.id}
-            />
+                  image={fruit.image}
+                  name={fruit.name}
+                  price={fruit.price}
+                  farmDirect={fruit.farmDirect}
+                />
               </div>
-          ))}
-        </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
