@@ -440,6 +440,7 @@ export default function Home() {
                     name={product.name}
                     price={typeof product.price === 'number' ? product.price.toString() : product.price}
                     farmDirect={true}
+                    unit={product.unit || 'kg'}
                   />
                 </div>
               ))}
@@ -488,6 +489,7 @@ export default function Home() {
                   name={fruit.name}
                   price={fruit.price}
                   farmDirect={fruit.farmDirect}
+                  unit={fruit.unit || 'kg'}
                 />
               </div>
             ))}

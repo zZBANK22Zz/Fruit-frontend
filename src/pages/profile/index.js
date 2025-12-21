@@ -15,6 +15,7 @@ import Button from "../../components/Button";
 import Modal from "../../components/Modal";
 import { compressImage, validateImageFile } from "../../utils/imageUtils";
 import { notifySuccess } from "../../utils/notificationUtils";
+import { handleTokenExpiration } from "../../utils/authUtils";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -91,9 +92,7 @@ export default function ProfilePage() {
             localStorage.setItem('user', JSON.stringify(user));
           }
         } else if (response.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          router.push('/registration/LoginPage');
+          handleTokenExpiration(true, router.push);
         }
       }
     } catch (error) {

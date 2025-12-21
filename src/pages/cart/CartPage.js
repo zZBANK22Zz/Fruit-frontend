@@ -6,6 +6,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { getCart, removeFromCart, updateCartItemQuantity, getCartTotal, clearCart } from "../../utils/cartUtils";
 import { notifySuccess } from "../../utils/notificationUtils";
+import { handleTokenExpiration, fetchWithAuth } from "../../utils/authUtils";
 
 export default function CartPage() {
   const router = useRouter();
@@ -71,23 +72,23 @@ export default function CartPage() {
         quantity: item.quantity // For fruits sold by piece (backend will use correct one)
       }));
 
-      // Create order
-      const response = await fetch(`${apiUrl}/api/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+      // Create order using fetchWithAuth to handle token expiration
+      const response = await fetchWithAuth(
+        `${apiUrl}/api/orders`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            items: items,
+            shipping_address: 'ที่อยู่จัดส่ง', // TODO: Get from user profile or form
+            shipping_city: 'Bangkok',
+            shipping_postal_code: '10110',
+            shipping_country: 'Thailand',
+            payment_method: 'Thai QR PromptPay',
+            notes: null
+          }),
         },
-        body: JSON.stringify({
-          items: items,
-          shipping_address: 'ที่อยู่จัดส่ง', // TODO: Get from user profile or form
-          shipping_city: 'Bangkok',
-          shipping_postal_code: '10110',
-          shipping_country: 'Thailand',
-          payment_method: 'Thai QR PromptPay',
-          notes: null
-        }),
-      });
+        router.push
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -107,12 +108,16 @@ export default function CartPage() {
           router.push(`/payment/PaymentPage?orderId=${orderId}`);
         }
       } else {
+        // Handle other errors (not 401, as that's handled by fetchWithAuth)
         const errorData = await response.json();
         alert(errorData.message || 'เกิดข้อผิดพลาดในการสร้างออเดอร์');
       }
     } catch (error) {
-      console.error('Error creating order:', error);
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      // Token expiration is already handled by fetchWithAuth
+      if (!error.message.includes('expired') && !error.message.includes('token')) {
+        console.error('Error creating order:', error);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
+      }
     }
   };
 

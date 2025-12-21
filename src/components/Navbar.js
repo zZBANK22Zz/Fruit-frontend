@@ -19,6 +19,7 @@ import {
   markAllAsRead, 
   removeNotification 
 } from "../utils/notificationUtils";
+import { handleTokenExpiration } from "../utils/authUtils";
 
 export default function Navbar({ showBackButton = false }) {
   const router = useRouter();
@@ -72,13 +73,11 @@ export default function Navbar({ showBackButton = false }) {
               }
             } else if (response.status === 401) {
               // Unauthorized - token expired or invalid
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
+              handleTokenExpiration(true, router.push);
               setUserName('ผู้ใช้');
             } else {
-              // Token might be invalid, clear it
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
+              // Token might be invalid, clear it (don't show warning for other errors)
+              handleTokenExpiration(false);
               setUserName('ผู้ใช้');
             }
           }
