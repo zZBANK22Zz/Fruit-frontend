@@ -281,7 +281,7 @@ export default function AdminProductsPage() {
         name: productForm.name.trim(),
         description: productForm.description.trim() || null,
         price: parseFloat(productForm.price),
-        stock: parseInt(productForm.stock) || 0,
+        stock: parseFloat(productForm.stock) || 0, // Stock in kilograms (can be decimal)
         category_id: productForm.category_id || null,
         image: productForm.image || null
       };
@@ -363,7 +363,7 @@ export default function AdminProductsPage() {
         name: productForm.name.trim(),
         description: productForm.description.trim() || null,
         price: parseFloat(productForm.price),
-        stock: parseInt(productForm.stock) || 0,
+        stock: parseFloat(productForm.stock) || 0, // Stock in kilograms (can be decimal)
         category_id: productForm.category_id || null,
         image: productForm.image || null
       };
@@ -627,8 +627,8 @@ export default function AdminProductsPage() {
                         <div className="text-sm text-gray-900">{parseFloat(product.price).toFixed(2)} บาท</div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className={`text-sm font-medium ${parseInt(product.stock) > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {product.stock}
+                        <div className={`text-sm font-medium ${parseFloat(product.stock) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {parseFloat(product.stock).toFixed(2)} kg
                         </div>
                       </td>
                       <td className="px-4 py-3">

@@ -32,6 +32,12 @@ export default function CartPage() {
       handleRemoveItem(productId);
       return;
     }
+    // For fruits sold by piece, ensure quantity is an integer
+    const cart = getCart();
+    const item = cart.find(i => i.id === productId);
+    if (item && item.unit === 'piece') {
+      newQuantity = Math.floor(newQuantity);
+    }
     updateCartItemQuantity(productId, newQuantity);
     loadCart();
   };
@@ -57,10 +63,12 @@ export default function CartPage() {
         return;
       }
 
-      // Prepare order items
+      // Prepare order items - need to fetch fruit details to determine unit
+      // For now, send both weight and quantity - backend will determine which to use
       const items = cartItems.map(item => ({
         fruit_id: item.id,
-        quantity: item.quantity
+        weight: item.quantity, // For fruits sold by kg
+        quantity: item.quantity // For fruits sold by piece (backend will use correct one)
       }));
 
       // Create order
@@ -197,7 +205,7 @@ export default function CartPage() {
                       <p className="text-xl font-extrabold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
                         {item.price}
                       </p>
-                      <span className="text-sm text-gray-500">บาท</span>
+                      <span className="text-sm text-gray-500">บาท {item.unit === 'piece' ? 'ต่อลูก' : 'ต่อกิโลกรัม'}</span>
                     </div>
 
                     {/* Quantity Controls */}
@@ -211,7 +219,7 @@ export default function CartPage() {
                         </button>
                         
                         <span className="text-base font-bold text-gray-900 min-w-[2rem] text-center">
-                          {item.quantity}
+                          {item.unit === 'piece' ? parseInt(item.quantity) : parseFloat(item.quantity).toFixed(2)} {item.unit === 'piece' ? 'ลูก' : 'กก.'}
                         </span>
                         
                         <button

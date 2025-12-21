@@ -11,14 +11,14 @@ export const getCart = () => {
   }
 };
 
-export const addToCart = (product) => {
+export const addToCart = (product, quantityToAdd = 1) => {
   try {
     const cart = getCart();
     const existingItemIndex = cart.findIndex(item => item.id === product.id);
     
     if (existingItemIndex >= 0) {
-      // If item already exists, increase quantity
-      cart[existingItemIndex].quantity += 1;
+      // If item already exists, increase quantity (can be integer or decimal)
+      cart[existingItemIndex].quantity += quantityToAdd;
     } else {
       // Add new item to cart
       cart.push({
@@ -27,7 +27,8 @@ export const addToCart = (product) => {
         price: product.price,
         image: product.image,
         stock: product.stock,
-        quantity: 1
+        unit: product.unit || 'kg', // Store unit to know if sold by kg or piece
+        quantity: quantityToAdd
       });
     }
     
@@ -84,7 +85,8 @@ export const clearCart = () => {
 
 export const getCartItemCount = () => {
   const cart = getCart();
-  return cart.reduce((total, item) => total + item.quantity, 0);
+  // Count the number of unique items in the cart (not total weight/quantity)
+  return cart.length;
 };
 
 export const getCartTotal = () => {

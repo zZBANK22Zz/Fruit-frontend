@@ -262,7 +262,7 @@ export default function BillPage() {
                           </h4>
                           <div className="flex items-center justify-between">
                             <p className="text-sm text-gray-600">
-                              จำนวน {item.quantity} ชิ้น × {typeof item.price === 'number' ? item.price.toFixed(2) : parseFloat(item.price || 0).toFixed(2)} บาท
+                              น้ำหนัก {parseFloat(item.quantity || 0).toFixed(2)} กิโลกรัม × {typeof item.price === 'number' ? item.price.toFixed(2) : parseFloat(item.price || 0).toFixed(2)} บาท
                             </p>
                             <p className="font-bold text-orange-600">
                               {typeof item.subtotal === 'number' ? item.subtotal.toFixed(2) : parseFloat(item.subtotal || 0).toFixed(2)} บาท

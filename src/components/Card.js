@@ -38,6 +38,7 @@ const Card = ({ image, name, price, farmDirect = true, productId }) => {
 
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-2">
+          <span className="text-xs text-gray-500">กิโลกรัมละ</span>
           <p className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
           ${price}
         </p>
