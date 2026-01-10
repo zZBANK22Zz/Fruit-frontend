@@ -144,7 +144,17 @@ export default function PaymentPage() {
         return;
       }
 
-      // 1. Upload Slip First
+      // Guard against accidental base64 in orderID
+      if (orderId && orderId.length > 500) {
+        console.error('Invalid orderId detected (too long).');
+        alert('เกิดข้อผิดพลาด: ข้อมูลออเดอร์ไม่ถูกต้อง');
+        setIsConfirming(false);
+        return;
+      }
+
+      console.log(`Sending slip to: ${apiUrl}/api/orders/${orderId}/upload-slip`);
+
+      // 1. Upload Slip (This also confirms payment on the backend)
       const uploadResponse = await fetch(`${apiUrl}/api/orders/${orderId}/upload-slip`, {
         method: 'POST',
         headers: {
@@ -152,45 +162,31 @@ export default function PaymentPage() {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          image: slipImage,
+          image: slipImage, // Large base64 string sent in body, NOT URL
           amount: paymentAmount,
           payment_date: new Date().toISOString(),
           notes: paymentNotes
         }),
       });
 
-      if (!uploadResponse.ok) {
+      if (uploadResponse.ok) {
+        const data = await uploadResponse.json();
+        const totalAmount = data.data?.amount || paymentAmount;
+        
+        notifySuccess(
+          'อัปโหลดหลักฐานสำเร็จ',
+          `เราได้รับหลักฐานการชำระเงินของคุณแล้ว จำนวน ${parseFloat(totalAmount).toFixed(2)} บาท`
+        );
+        
+        // Redirect to bill page - The backend already updated status to 'processing' or 'paid'
+        router.push(`/bills/BillPage?orderId=${orderId}`);
+      } else {
         const uploadError = await uploadResponse.json().catch(() => ({}));
         throw new Error(uploadError.message || 'ไม่สามารถอัปโหลดสลิปได้');
       }
 
-      // 2. Confirm payment
-      const response = await fetch(`${apiUrl}/api/orders/${orderId}/confirm-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const orderData = data.data?.order;
-        const totalAmount = orderData?.total_amount || paymentAmount;
-        
-        notifySuccess(
-          'ชำระเงินสำเร็จ',
-          `การชำระเงินสำหรับออเดอร์ #${orderId} สำเร็จแล้ว จำนวน ${parseFloat(totalAmount).toFixed(2)} บาท`
-        );
-        
-        router.push(`/bills/BillPage?orderId=${orderId}`);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        alert(errorData.message || 'ไม่สามารถยืนยันการชำระเงินได้');
-        setIsConfirming(false);
-      }
     } catch (error) {
-      console.error('Error confirming payment:', error);
+      console.error('Payment error:', error);
       alert(error.message || 'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง');
       setIsConfirming(false);
     }

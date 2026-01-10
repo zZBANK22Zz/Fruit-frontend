@@ -15,10 +15,64 @@ export default function BillPage() {
   const { orderId, invoiceId } = router.query;
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(true);
   const [error, setError] = useState(null);
+
+  const verifyLiffAndAuth = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        setIsVerifying(false);
+        return true;
+      }
+
+      // If no token, check if we're in LINE environment
+      const liff = (await import('@line/liff')).default;
+      
+      if (!liff.isLoggedIn()) {
+        // Not logged into LIFF, trigger login
+        // Use redirectUri to return to THIS EXACT page after login
+        liff.login({ redirectUri: window.location.href });
+        return false;
+      }
+
+      // Logged into LIFF but no app token - verify with backend
+      const idToken = liff.getIDToken();
+      if (!idToken) throw new Error('Could not retrieve LIFF ID Token');
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+      const response = await fetch(`${apiUrl}/api/auth/line/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data?.token) {
+          localStorage.setItem('token', data.data.token);
+          localStorage.setItem('user', JSON.stringify(data.data.user));
+          setIsVerifying(false);
+          return true;
+        }
+      }
+      
+      throw new Error('Verification failed');
+
+    } catch (err) {
+      console.error('LIFF Auth verification failed:', err);
+      setError('กรุณาเข้าสู่ระบบก่อนดูใบเสร็จ');
+      setIsVerifying(false);
+      return false;
+    }
+  };
 
   useEffect(() => {
     const loadInvoice = async () => {
+      // First, ensure we are authenticated
+      const authenticated = await verifyLiffAndAuth();
+      if (!authenticated) return;
+
       if (!orderId && !invoiceId) {
         setError('ไม่พบข้อมูลใบเสร็จ');
         setLoading(false);
@@ -75,8 +129,10 @@ export default function BillPage() {
       }
     };
 
-    loadInvoice();
-  }, [orderId, invoiceId]);
+    if (router.isReady) {
+      loadInvoice();
+    }
+  }, [orderId, invoiceId, router.isReady]);
 
   const handleDownloadPDF = async () => {
     if (!invoice) return;
@@ -123,14 +179,16 @@ export default function BillPage() {
     });
   };
 
-  if (loading) {
+  if (loading || isVerifying) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Navbar showBackButton={true} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
-            <div className="text-gray-500">กำลังโหลดใบเสร็จ...</div>
+            <div className="text-gray-500">
+              {isVerifying ? 'กำลังยืนยันตัวตน...' : 'กำลังโหลดใบเสร็จ...'}
+            </div>
           </div>
         </div>
       </div>
