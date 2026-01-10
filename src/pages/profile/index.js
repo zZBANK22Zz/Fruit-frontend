@@ -34,6 +34,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isLineUser, setIsLineUser] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
@@ -43,58 +44,64 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
+      
+      let initialUserData = null;
 
       if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setUserData(user);
-        setFormData({
-          username: user.username || '',
-          email: user.email || '',
-          first_name: user.first_name || '',
-          last_name: user.last_name || '',
-          password: '',
-          image: user.image || null // Initialize with current user image
-        });
-        setImagePreview(user.image ? `data:image/jpeg;base64,${user.image}` : null);
-        setLoading(false);
-        return;
-      }
+        initialUserData = JSON.parse(storedUser);
+      } else if (token) {
+        const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+        if (apiUrl) {
+          const response = await fetch(`${apiUrl}/api/users/profile`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
 
-      if (!token) {
-        router.push('/registration/LoginPage');
-        return;
-      }
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
-      if (apiUrl) {
-        const response = await fetch(`${apiUrl}/api/users/profile`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.data && data.data.user) {
-            const user = data.data.user;
-            setUserData(user);
-            setFormData({
-              username: user.username || '',
-              email: user.email || '',
-              first_name: user.first_name || '',
-              last_name: user.last_name || '',
-              password: '',
-              image: user.image || null // Initialize with current user image
-            });
-            setImagePreview(user.image ? `data:image/jpeg;base64,${user.image}` : null);
-            localStorage.setItem('user', JSON.stringify(user));
+          if (response.ok) {
+            const data = await response.json();
+            if (data.data && data.data.user) {
+              initialUserData = data.data.user;
+              localStorage.setItem('user', JSON.stringify(initialUserData));
+            }
+          } else if (response.status === 401) {
+            handleTokenExpiration(true, router.push);
+            return;
           }
-        } else if (response.status === 401) {
-          handleTokenExpiration(true, router.push);
         }
       }
+
+      if (!initialUserData) {
+        if (!token) router.push('/registration/LoginPage');
+        return;
+      }
+
+      // Check if logged in with LINE
+      try {
+        const liff = (await import('@line/liff')).default;
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          // Override email with Line ID for display
+          initialUserData.email = profile.userId;
+          setIsLineUser(true);
+        }
+      } catch (err) {
+        console.error('LIFF check failed:', err);
+      }
+
+      setUserData(initialUserData);
+      setFormData({
+        username: initialUserData.username || '',
+        email: initialUserData.email || '',
+        first_name: initialUserData.first_name || '',
+        last_name: initialUserData.last_name || '',
+        password: '',
+        image: initialUserData.image || null
+      });
+      setImagePreview(initialUserData.image ? `data:image/jpeg;base64,${initialUserData.image}` : null);
+
     } catch (error) {
       console.error('Error loading user profile:', error);
     } finally {
@@ -403,6 +410,12 @@ export default function ProfilePage() {
                     <EnvelopeIcon className="w-4 h-4 text-orange-100" />
                     <p className="text-orange-100 text-sm sm:text-base">{userData.email}</p>
                   </div>
+                  {isLineUser && (
+                    <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full">
+                      <ShieldCheckIcon className="w-3 h-3 text-white" />
+                      <span className="text-xs font-semibold text-white">LINE User</span>
+                    </div>
+                  )}
                   {userData.role === 'admin' && (
                     <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full">
                       <ShieldCheckIcon className="w-3 h-3 text-white" />
@@ -507,7 +520,7 @@ export default function ProfilePage() {
               <div className="group transition-all duration-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-orange-50 rounded-xl p-5 border border-transparent hover:border-orange-100">
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
                   <EnvelopeIcon className="w-4 h-4" />
-                  <span>อีเมล</span>
+                  <span>{isLineUser ? 'LINE ID' : 'อีเมล'}</span>
                 </label>
                 {isEditing ? (
                   <div className="relative">

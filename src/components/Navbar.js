@@ -325,6 +325,13 @@ export default function Navbar({ showBackButton = false }) {
     
     // Redirect to login page
     router.push('/registration/LoginPage');
+
+    // line liff logout
+    import('@line/liff').then((liff) => {
+      if (liff.default.isLoggedIn()) {
+        liff.default.logout();
+      }
+    }).catch(err => console.error('LIFF logout error:', err));
   };
 
   return (
