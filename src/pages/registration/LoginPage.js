@@ -146,27 +146,40 @@ const LoginPage = () => {
         }
     };
 
-    // Check LIFF login status on mount/query change
+    // Check for existing session or LIFF login status on mount
     useEffect(() => {
-        const checkLiffStatus = async () => {
+        const checkAuthAndLiff = async () => {
+            // 1. Immediate redirect if token already exists
+            const token = localStorage.getItem('token');
+            if (token) {
+                router.replace('/');
+                return;
+            }
+
             try {
                 const liff = (await import('@line/liff')).default;
                 
-                // If we're coming back from a login redirect
+                // Wait for LIFF or signs of redirect
+                // LIFF SDK needs time to parse query parameters (code/state)
                 if (liff.isLoggedIn()) {
-                    handleLiffCallback();
+                    await handleLiffCallback();
+                } else if (router.query.code && router.query.state) {
+                    // Force a small wait if we see LIFF params but sdk says not logged in yet
+                    setTimeout(async () => {
+                        if (liff.isLoggedIn()) {
+                            await handleLiffCallback();
+                        }
+                    }, 500);
                 }
             } catch (err) {
                 console.error('Error checking LIFF status:', err);
             }
         };
 
-        // Only run if there are signs of a callback (e.g., query params from LIFF)
-        // or if we just want to check if the user is already logged in via LIFF
         if (router.isReady) {
-            checkLiffStatus();
+            checkAuthAndLiff();
         }
-    }, [router.isReady]);
+    }, [router.isReady, router.query]);
 
     const isFormValid = loginData.email.trim() !== '' && loginData.password.trim() !== '';
 
