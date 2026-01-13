@@ -49,7 +49,7 @@ const Button = ({
     secondary: 'bg-gray-200 text-gray-700 hover:bg-gray-300',
     outline: 'border-2 border-orange-400 text-orange-500 hover:bg-orange-50',
     danger: 'bg-red-500 text-white hover:bg-red-600',
-    success: 'bg-green-500 text-white hover:bg-green-600',
+    success: 'bg-[#00B900] text-white hover:bg-[#00A000]',
     ghost: 'bg-transparent text-gray-700 hover:bg-gray-100',
     link: 'bg-transparent text-orange-500 hover:text-orange-600 underline p-0',
   };

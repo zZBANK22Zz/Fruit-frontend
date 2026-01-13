@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import "@/styles/globals.css";
+import initLiff from "@/utils/liff";
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
@@ -8,6 +9,7 @@ export default function App({ Component, pageProps }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    initLiff();
     // Public routes that don't require authentication
     const publicRoutes = [
       '/registration/LoginPage',

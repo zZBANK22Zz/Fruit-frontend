@@ -245,6 +245,88 @@ export default function Home() {
     }
   }, [promotionalImages.length]);
 
+  // Fetch popular fruit from API
+  useEffect(() => {
+    const loadPopularFruit = async () => {
+      try {
+        setPopularFruitsLoading(true);
+        const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+        
+        if (!apiUrl) {
+          setPopularFruits(defaultPopularFruits);
+          setPopularFruitsLoading(false);
+          return;
+        }
+
+        // Fetch popular fruit IDs
+        const res = await fetch(`${apiUrl}/api/fruits/popular-fruit`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok || !data.data || !data.data.popularFruit || data.data.popularFruit.length === 0) {
+          // If no popular fruits, use default
+          setPopularFruits(defaultPopularFruits);
+          setPopularFruitsLoading(false);
+          return;
+        }
+
+        const popularFruitIds = data.data.popularFruit.map(item => item.fruit_id);
+        
+        // Fetch full fruit details for each popular fruit ID
+        const fruitDetailsPromises = popularFruitIds.map(async (fruitId) => {
+          try {
+            const fruitRes = await fetch(`${apiUrl}/api/fruits/${fruitId}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (fruitRes.ok) {
+              const fruitData = await fruitRes.json();
+              if (fruitData.data && fruitData.data.fruit) {
+                const fruit = fruitData.data.fruit;
+                return {
+                  id: fruit.id,
+                  name: fruit.name,
+                  price: typeof fruit.price === 'number' ? fruit.price.toString() : fruit.price,
+                  image: fruit.image ? `data:image/jpeg;base64,${fruit.image}` : '/images/example.jpg',
+                  farmDirect: true,
+                  unit: fruit.unit || 'kg'
+                };
+              }
+            }
+            return null;
+          } catch (error) {
+            console.error(`Error fetching fruit ${fruitId}:`, error);
+            return null;
+          }
+        });
+
+        const fruitDetails = await Promise.all(fruitDetailsPromises);
+        const validFruits = fruitDetails.filter(fruit => fruit !== null);
+        
+        if (validFruits.length > 0) {
+          setPopularFruits(validFruits);
+        } else {
+          // If all requests failed, use default
+          setPopularFruits(defaultPopularFruits);
+        }
+      } catch (error) {
+        console.error('Error loading popular fruits:', error);
+        setPopularFruits(defaultPopularFruits);
+      } finally {
+        setPopularFruitsLoading(false);
+      }
+    }
+    loadPopularFruit();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50/30 via-white to-white">
       {/* Combined Navbar and Search Bar - Sticky Header */}
@@ -408,7 +490,12 @@ export default function Home() {
                 )}
               </>
             ) : (
-              popularFruitsLoading ? "ผลไม้ยอดฮิต" : (isShowingUserProducts ? "สินค้าที่คุณซื้อบ่อย" : "ผลไม้ยอดฮิต")
+              <>
+                {popularFruitsLoading ? "ผลไม้ยอดฮิต" : (isShowingUserProducts ? "สินค้าที่คุณซื้อบ่อย" : "ผลไม้ยอดฮิต")}
+                <span className="ml-2 text-base text-gray-500 font-normal">
+                  ({popularFruits.length} รายการ)
+                </span>
+              </>
             )}
         </h2>
         </div>
