@@ -25,9 +25,16 @@ export default function App({ Component, pageProps }) {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
       if (isPublicRoute) {
-        // If on public route, allow access
-        setIsAuthenticated(true);
-        setIsLoading(false);
+        if (token) {
+          // User is already authenticated, redirect away from LoginPage/RegisterPage
+          setIsAuthenticated(true);
+          setIsLoading(false);
+          router.replace('/');
+        } else {
+          // If on public route and no token, allow access
+          setIsAuthenticated(true);
+          setIsLoading(false);
+        }
       } else {
         // If not on public route, check authentication
         if (token) {
@@ -38,7 +45,7 @@ export default function App({ Component, pageProps }) {
           // User is not authenticated, redirect to login
           setIsAuthenticated(false);
           setIsLoading(false);
-          router.push('/registration/LoginPage');
+          router.replace('/registration/LoginPage');
         }
       }
     };
