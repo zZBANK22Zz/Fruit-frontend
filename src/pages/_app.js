@@ -45,7 +45,10 @@ export default function App({ Component, pageProps }) {
           // User is not authenticated, redirect to login
           setIsAuthenticated(false);
           setIsLoading(false);
-          router.replace('/registration/LoginPage');
+          
+          // Preserve query parameters (CRITICAL for LIFF login redirect)
+          const queryString = typeof window !== 'undefined' ? window.location.search : '';
+          router.replace(`/registration/LoginPage${queryString}`);
         }
       }
     };
