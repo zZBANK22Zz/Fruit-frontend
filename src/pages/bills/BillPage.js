@@ -9,6 +9,7 @@ import {
   TruckIcon
 } from "@heroicons/react/24/outline";
 import Navbar from "../../components/Navbar";
+import { fetchOrderById } from "../../utils/orderUtils";
 
 export default function BillPage() {
   const router = useRouter();
@@ -89,37 +90,17 @@ export default function BillPage() {
           return;
         }
 
-        let response;
-        if (invoiceId) {
-          // Get invoice by invoice ID
-          response = await fetch(`${apiUrl}/api/invoices/${invoiceId}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-        } else if (orderId) {
-          // Get invoice by order ID
-          response = await fetch(`${apiUrl}/api/invoices/order/${orderId}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          });
+        let data;
+        const idToFetch = orderId || invoiceId;
+        
+        if (idToFetch) {
+          data = await fetchOrderById(idToFetch);
         }
 
-        if (response && response.ok) {
-          const data = await response.json();
-          if (data.data && data.data.invoice) {
-            setInvoice(data.data.invoice);
-          } else {
-            setError('ไม่พบข้อมูลใบเสร็จ');
-          }
+        if (data) {
+          setInvoice(data);
         } else {
-          const errorData = await response.json().catch(() => ({}));
-          setError(errorData.message || 'ไม่สามารถโหลดใบเสร็จได้');
+          setError('ไม่พบข้อมูลใบเสร็จ');
         }
       } catch (error) {
         console.error('Error loading invoice:', error);
@@ -172,11 +153,33 @@ export default function BillPage() {
     const date = new Date(dateString);
     return date.toLocaleDateString('th-TH', {
       year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      month: 'short',
+      day: 'numeric'
     });
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'paid': return 'ชำระเงินแล้ว';
+      case 'received': return 'รับออเดอร์แล้ว';
+      case 'preparing': return 'กำลังเตรียมสินค้า';
+      case 'completed': return 'เตรียมสินค้าเสร็จแล้ว';
+      case 'shipped': return 'จัดส่งแล้ว';
+      case 'confirmed': return 'ยืนยันแล้ว';
+      default: return status || 'รอดำเนินการ';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'paid': return 'bg-blue-100/10 text-blue-700 border-blue-200';
+      case 'received': return 'bg-purple-100/10 text-purple-700 border-purple-200';
+      case 'preparing': return 'bg-yellow-100/10 text-yellow-700 border-yellow-200';
+      case 'completed': return 'bg-green-100/10 text-green-700 border-green-200';
+      case 'shipped': return 'bg-gray-100/10 text-gray-700 border-gray-200';
+      case 'confirmed': return 'bg-blue-100/10 text-blue-700 border-blue-200';
+      default: return 'bg-gray-100/10 text-gray-700 border-gray-200';
+    }
   };
 
   if (loading || isVerifying) {
@@ -229,7 +232,12 @@ export default function BillPage() {
             </div>
           </div>
           <h1 className="text-2xl font-bold mb-1">ชำระเงินสำเร็จ!</h1>
-          <p className="text-green-100">ขอบคุณที่ชำระเงิน ใบเสร็จของคุณพร้อมแล้ว</p>
+          <p className="text-green-100 mb-4">ขอบคุณที่ชำระเงิน ใบเสร็จของคุณพร้อมแล้ว</p>
+          <div className="flex justify-center">
+            <span className={`px-4 py-1.5 rounded-full text-sm font-black border-2 shadow-sm ${getStatusColor(invoice.order_status || invoice.status)} bg-white`}>
+              {getStatusLabel(invoice.order_status || invoice.status)}
+            </span>
+          </div>
         </div>
 
         {/* Invoice Card */}

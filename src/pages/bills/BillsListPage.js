@@ -7,6 +7,7 @@ import {
   CurrencyDollarIcon
 } from "@heroicons/react/24/outline";
 import Navbar from "../../components/Navbar";
+import { fetchUserOrders } from "../../utils/orderUtils";
 
 export default function BillsListPage() {
   const router = useRouter();
@@ -20,34 +21,8 @@ export default function BillsListPage() {
 
   const loadInvoices = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
-      const token = localStorage.getItem('token');
-
-      if (!apiUrl || !token) {
-        setError('กรุณาเข้าสู่ระบบก่อน');
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${apiUrl}/api/invoices/my-invoices`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data && data.data.invoices) {
-          setInvoices(data.data.invoices);
-        } else {
-          setInvoices([]);
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        setError(errorData.message || 'ไม่สามารถโหลดใบเสร็จได้');
-      }
+      const orders = await fetchUserOrders();
+      setInvoices(orders);
     } catch (error) {
       console.error('Error loading invoices:', error);
       setError('เกิดข้อผิดพลาดในการโหลดใบเสร็จ');
@@ -68,6 +43,30 @@ export default function BillsListPage() {
 
   const formatCurrency = (amount) => {
     return parseFloat(amount).toFixed(2);
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'paid': return 'ชำระเงินแล้ว';
+      case 'received': return 'รับออเดอร์แล้ว';
+      case 'preparing': return 'กำลังเตรียมสินค้า';
+      case 'completed': return 'เตรียมสินค้าเสร็จแล้ว';
+      case 'shipped': return 'จัดส่งแล้ว';
+      case 'confirmed': return 'ยืนยันแล้ว';
+      default: return status || 'รอดำเนินการ';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'paid': return 'bg-blue-100 text-blue-700';
+      case 'received': return 'bg-purple-100 text-purple-700';
+      case 'preparing': return 'bg-yellow-100 text-yellow-700';
+      case 'completed': return 'bg-green-100 text-green-700';
+      case 'shipped': return 'bg-gray-100 text-gray-700';
+      case 'confirmed': return 'bg-blue-100 text-blue-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
   };
 
   if (loading) {
@@ -145,16 +144,8 @@ export default function BillsListPage() {
                       <p className="text-xl font-bold text-orange-600 mb-1">
                         {formatCurrency(invoice.total_amount)} บาท
                       </p>
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        invoice.order_status === 'paid' 
-                          ? 'bg-green-100 text-green-700'
-                          : invoice.order_status === 'confirmed'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {invoice.order_status === 'paid' ? 'ชำระแล้ว' : 
-                         invoice.order_status === 'confirmed' ? 'ยืนยันแล้ว' :
-                         invoice.order_status || 'รอดำเนินการ'}
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.order_status || invoice.status)}`}>
+                        {getStatusLabel(invoice.order_status || invoice.status)}
                       </span>
                     </div>
                   </div>
