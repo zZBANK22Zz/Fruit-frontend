@@ -190,11 +190,10 @@ export default function Navbar({ showBackButton = false }) {
 
   // Load and update notifications
   useEffect(() => {
-    const updateNotifications = () => {
-      const allNotifications = getNotifications();
-      const unread = getUnreadCount();
-      setNotifications(allNotifications);
-      setUnreadCount(unread);
+    const updateNotifications = async () => {
+      const data = await getNotifications();
+      setNotifications(data.notifications);
+      setUnreadCount(data.unread_count);
     };
 
     // Initial load
@@ -205,14 +204,9 @@ export default function Navbar({ showBackButton = false }) {
       updateNotifications();
     };
     window.addEventListener('notificationsUpdated', handleNotificationUpdate);
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'notifications') {
-        updateNotifications();
-      }
-    });
 
-    // Check periodically
-    const interval = setInterval(updateNotifications, 2000);
+    // Polling every 30 seconds for real-time experience
+    const interval = setInterval(updateNotifications, 30000);
 
     return () => {
       window.removeEventListener('notificationsUpdated', handleNotificationUpdate);
@@ -237,18 +231,29 @@ export default function Navbar({ showBackButton = false }) {
     };
   }, [showNotificationDropdown]);
 
-  const handleNotificationClick = (notificationId) => {
-    markAsRead(notificationId);
-    setShowNotificationDropdown(false);
+  const handleNotificationClick = async (notificationId) => {
+    await markAsRead(notificationId);
+    // After marking as read, refresh notifications
+    const data = await getNotifications();
+    setNotifications(data.notifications);
+    setUnreadCount(data.unread_count);
   };
 
-  const handleMarkAllAsRead = () => {
-    markAllAsRead();
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
+    // Refresh notifications
+    const data = await getNotifications();
+    setNotifications(data.notifications);
+    setUnreadCount(data.unread_count);
   };
 
-  const handleRemoveNotification = (notificationId, e) => {
+  const handleRemoveNotification = async (notificationId, e) => {
     e.stopPropagation();
-    removeNotification(notificationId);
+    await removeNotification(notificationId);
+    // Refresh notifications after removal
+    const data = await getNotifications();
+    setNotifications(data.notifications);
+    setUnreadCount(data.unread_count);
   };
 
   const getNotificationIcon = (type) => {
@@ -265,7 +270,10 @@ export default function Navbar({ showBackButton = false }) {
   };
 
   const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return '';
+    
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
@@ -383,7 +391,7 @@ export default function Navbar({ showBackButton = false }) {
                   <div className="p-2 rounded-lg bg-gray-100 group-hover:bg-orange-100 transition-colors">
                     <UserIcon className="w-5 h-5 text-gray-600 group-hover:text-orange-600" />
                   </div>
-                  <span className="group-hover:text-orange-600 transition-colors">Profile</span>
+                  <span className="group-hover:text-orange-600 transition-colors">โปรไฟล์</span>
                 </button>
                 <button
                   onClick={handleHistoryClick}
@@ -394,12 +402,23 @@ export default function Navbar({ showBackButton = false }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <span className="group-hover:text-orange-600 transition-colors">History</span>
+                  <span className="group-hover:text-orange-600 transition-colors">ประวัติการสั่งซื้อ</span>
                 </button>
                 {/* Admin Only: Add Product Option */}
                 {userData?.role === 'admin' && (
                   <>
-                    <div className="border-t border-gray-200 my-1"></div>
+                    <button
+                      onClick={() => {
+                        setShowDropdown(false);
+                        router.push('/admin/orders');
+                      }}
+                      className="w-full px-4 py-3 text-left text-sm font-medium text-orange-600 hover:bg-gradient-to-r hover:from-orange-50 hover:to-transparent transition-all duration-200 flex items-center gap-3 group"
+                    >
+                      <div className="p-2 rounded-lg bg-orange-100 group-hover:bg-orange-200 transition-colors">
+                        <ShoppingCartIcon className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <span className="group-hover:text-orange-700 transition-colors">จัดการออเดอร์</span>
+                    </button>
                     <button
                       onClick={handleAddProductClick}
                       className="w-full px-4 py-3 text-left text-sm font-medium text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent transition-all duration-200 flex items-center gap-3 group"
@@ -407,7 +426,7 @@ export default function Navbar({ showBackButton = false }) {
                       <div className="p-2 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
                         <PlusCircleIcon className="w-5 h-5 text-blue-600" />
                       </div>
-                      <span className="group-hover:text-blue-700 transition-colors">Manage Product</span>
+                      <span className="group-hover:text-blue-700 transition-colors">จัดการสินค้า</span>
                     </button>
                   </>
                 )}
@@ -421,7 +440,7 @@ export default function Navbar({ showBackButton = false }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                   </div>
-                  <span className="group-hover:text-red-700 transition-colors">Logout</span>
+                  <span className="group-hover:text-red-700 transition-colors">ออกจากระบบ</span>
                 </button>
               </div>
             )}
@@ -500,7 +519,7 @@ export default function Navbar({ showBackButton = false }) {
                                     {notification.message}
                                   </p>
                                   <p className="text-xs text-gray-400 mt-1">
-                                    {formatTimestamp(notification.timestamp)}
+                                    {formatTimestamp(notification.timestamp || notification.created_at)}
                                   </p>
                                 </div>
                                 {!notification.read && (
