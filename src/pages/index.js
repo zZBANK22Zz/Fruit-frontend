@@ -16,6 +16,7 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [allProducts, setAllProducts] = useState([]);
 
   // Promotional banner images - update these paths with your actual image filenames
   const promotionalImages = [
@@ -133,16 +134,30 @@ export default function Home() {
           const data = await response.json();
           if (data.data && data.data.fruits) {
             setProducts(data.data.fruits);
+            // Transform for Card component
+            const transformed = data.data.fruits.map(product => ({
+              id: product.id,
+              name: product.name,
+              price: typeof product.price === 'number' ? product.price.toString() : product.price,
+              image: product.image ? `data:image/jpeg;base64,${product.image}` : '/images/example.jpg',
+              farmDirect: true,
+              unit: product.unit || 'kg',
+              stock: product.stock
+            }));
+            setAllProducts(transformed);
           } else {
             setProducts([]);
+            setAllProducts([]);
           }
         } else {
           console.error('Failed to fetch products:', response.status);
           setProducts([]);
+          setAllProducts([]);
         }
       } catch (error) {
         console.error('Error loading products:', error);
         setProducts([]);
+        setAllProducts([]);
       } finally {
         setProductsLoading(false);
       }
@@ -184,7 +199,8 @@ export default function Home() {
               name: product.name,
               price: typeof product.price === 'number' ? product.price.toString() : product.price,
               image: product.image ? `data:image/jpeg;base64,${product.image}` : '/images/example.jpg',
-              farmDirect: true
+              farmDirect: true,
+              stock: product.stock
             }));
             setPopularFruits(transformedProducts);
             setIsShowingUserProducts(true);
@@ -297,7 +313,8 @@ export default function Home() {
                   price: typeof fruit.price === 'number' ? fruit.price.toString() : fruit.price,
                   image: fruit.image ? `data:image/jpeg;base64,${fruit.image}` : '/images/example.jpg',
                   farmDirect: true,
-                  unit: fruit.unit || 'kg'
+                  unit: fruit.unit || 'kg',
+                  stock: fruit.stock
                 };
               }
             }
@@ -382,99 +399,6 @@ export default function Home() {
           </div>
         )}
       </div>
-
-      {/* Promotional Banner Slider */}
-      <div className="px-4 sm:px-6 py-6 sm:py-8">
-        <div className="relative overflow-hidden rounded-lg w-full group">
-          {/* Decorative gradient orbs */}
-          <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-orange-400/20 to-transparent rounded-full blur-3xl z-0 animate-pulse"></div>
-          <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-orange-500/20 to-transparent rounded-full blur-3xl z-0 animate-pulse" style={{ animationDelay: '1s' }}></div>
-          
-          <div 
-            className="flex flex-nowrap transition-transform duration-700 ease-in-out relative z-10"
-            style={{ 
-              transform: `translateX(-${currentSlide * (100 / promotionalImages.length)}%)`,
-              width: `${promotionalImages.length * 100}%`
-            }}
-          >
-            {promotionalImages.map((image, index) => (
-              <div
-                key={index}
-                className="shrink-0 relative bg-gradient-to-br from-orange-100 via-orange-50 to-orange-200 overflow-hidden group/item"
-                style={{ width: `${100 / promotionalImages.length}%` }}
-              >
-                <div className="relative h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 overflow-hidden">
-                  <img
-                    src={image}
-                    alt={`Promotion ${index + 1}`}
-                    className="w-full h-full object-cover transform group-hover/item:scale-110 transition-transform duration-700 ease-out"
-                    onError={(e) => {
-                      console.error('Image failed to load:', image);
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                  {/* Enhanced gradient overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-transparent to-orange-500/10"></div>
-                  
-                  {/* Shine effect on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover/item:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-                </div>
-                
-                {/* Content overlay area (for future promotional text) */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 z-20">
-                  <div className="max-w-2xl">
-                    {/* Add promotional text here if needed */}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {/* Enhanced Navigation Dots */}
-          {promotionalImages.length > 1 && (
-            <div className="flex justify-center items-center gap-3 mt-6 relative z-20">
-              {promotionalImages.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`rounded-full transition-all duration-300 hover:scale-125 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 ${
-                    currentSlide === index 
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 w-10 h-3 shadow-lg shadow-orange-200' 
-                      : 'bg-gray-300 w-3 h-3 hover:bg-gray-400 hover:w-4'
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
-          
-          {/* Previous/Next Navigation Arrows */}
-          {promotionalImages.length > 1 && (
-            <>
-              <button
-                onClick={() => setCurrentSlide((currentSlide - 1 + promotionalImages.length) % promotionalImages.length)}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-xl hover:bg-white hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                aria-label="Previous slide"
-              >
-                <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setCurrentSlide((currentSlide + 1) % promotionalImages.length)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-xl hover:bg-white hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                aria-label="Next slide"
-              >
-                <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
       {/* Products Section */}
       <div className="px-4 sm:px-6 pb-12">
         <div className="flex items-center justify-between mb-6">
@@ -528,6 +452,7 @@ export default function Home() {
                     price={typeof product.price === 'number' ? product.price.toString() : product.price}
                     farmDirect={true}
                     unit={product.unit || 'kg'}
+                    stock={product.stock}
                   />
                 </div>
               ))}
@@ -577,9 +502,44 @@ export default function Home() {
                   price={fruit.price}
                   farmDirect={fruit.farmDirect}
                   unit={fruit.unit || 'kg'}
+                  stock={fruit.stock}
                 />
               </div>
             ))}
+          </div>
+        )}
+
+        {/* All Products Section - Show only when not searching/filtering */}
+        {!(searchQuery || selectedCategoryFilter) && !popularFruitsLoading && !productsLoading && allProducts.length > 0 && (
+          <div className="mt-16 py-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 flex items-center gap-3">
+                <span className="w-1 h-8 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></span>
+                สินค้าทั้งหมด
+                <span className="ml-2 text-base text-gray-500 font-normal">
+                  ({allProducts.length} รายการ)
+                </span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+              {allProducts.map((product, index) => (
+                <div 
+                  key={`all-${product.id}`}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <Card
+                    productId={product.id}
+                    image={product.image}
+                    name={product.name}
+                    price={product.price}
+                    farmDirect={product.farmDirect}
+                    unit={product.unit || 'kg'}
+                    stock={product.stock}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

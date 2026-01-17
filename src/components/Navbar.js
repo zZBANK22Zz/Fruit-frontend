@@ -9,7 +9,8 @@ import {
   XCircleIcon,
   InformationCircleIcon,
   ExclamationTriangleIcon,
-  PlusCircleIcon
+  PlusCircleIcon,
+  HomeIcon
 } from "@heroicons/react/24/outline";
 import { getCartItemCount } from "../utils/cartUtils";
 import { 
@@ -447,14 +448,30 @@ export default function Navbar({ showBackButton = false }) {
           </div>
           
           {/* User Name and Greeting */}
-          <div className="flex flex-col">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">สวัสดี {userName}</h2>
-            <p className="text-xs sm:text-sm text-gray-500 font-medium">{greeting}</p>
+          <div 
+            onClick={() => router.push('/')}
+            className="flex flex-col cursor-pointer group"
+          >
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors flex items-center gap-1">
+              Fruit Shop
+              <span className="text-xs font-normal text-gray-400">|</span>
+              <span className="text-sm font-medium text-gray-600 group-hover:text-orange-500">{userName}</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 font-medium group-hover:text-orange-400 transition-colors">{greeting}</p>
           </div>
         </div>
 
         {/* Action Icons */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Home Icon */}
+          <button 
+            onClick={() => router.push('/')}
+            className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all duration-300 transform hover:scale-110 active:scale-95"
+            title="หน้าแรก"
+          >
+            <HomeIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+          </button>
+
           {/* Notification Bell Icon */}
           <div className="relative" ref={notificationDropdownRef}>
             <button 

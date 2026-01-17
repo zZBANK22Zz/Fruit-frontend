@@ -166,6 +166,7 @@ export default function ProductPage() {
                   price={typeof fruit.price === 'number' ? fruit.price.toString() : fruit.price}
                   farmDirect={true}
                   unit={fruit.unit || 'kg'}
+                  stock={fruit.stock}
                 />
               );
             })}

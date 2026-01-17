@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { 
   ArrowLeftIcon,
-  TrashIcon
+  TrashIcon,
+  HomeIcon
 } from "@heroicons/react/24/outline";
 import { getCart, removeFromCart, updateCartItemQuantity, getCartTotal, clearCart } from "../../utils/cartUtils";
 import { notifySuccess } from "../../utils/notificationUtils";
@@ -147,7 +148,13 @@ export default function CartPage() {
           ตะกร้าสินค้า
         </h1>
         
-        <div className="w-10"></div> {/* Spacer for centering */}
+        <button
+          onClick={() => router.push('/')}
+          className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all duration-300 transform hover:scale-110 active:scale-95"
+          title="หน้าแรก"
+        >
+          <HomeIcon className="w-6 h-6" />
+        </button>
       </div>
 
       {/* Cart Items Section */}

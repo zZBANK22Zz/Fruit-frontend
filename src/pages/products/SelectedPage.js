@@ -231,11 +231,25 @@ export default function SelectedPage() {
         <div className="bg-white px-4 sm:px-6 py-6 rounded-t-3xl shadow-lg">
           {/* Stock Badge */}
           {isOutOfStock ? (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 text-red-700 rounded-full text-sm font-semibold mb-4 border border-red-200 shadow-sm">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              สินค้าหมด
+            <div className="bg-red-50 border-2 border-red-100 rounded-2xl p-6 mb-8 shadow-sm">
+              <div className="flex items-center gap-4 text-red-700 mb-3">
+                <div className="p-3 bg-red-100 rounded-full">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">ขออภัย! สินค้าหมดชั่วคราว</h3>
+                  <p className="text-red-600 font-medium">เรากำลังเร่งเติมสต็อกให้เร็วที่สุด</p>
+                </div>
+              </div>
+              <button
+                onClick={() => router.push('/')}
+                className="w-full py-3 bg-white border-2 border-red-200 text-red-600 font-bold rounded-xl hover:bg-red-50 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <ArrowLeftIcon className="w-5 h-5" />
+                กลับไปเลือกสินค้าอื่น
+              </button>
             </div>
           ) : product.stock && product.stock < 10 ? (
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-orange-50 text-orange-700 rounded-full text-sm font-semibold mb-4 border border-orange-200 shadow-sm">
@@ -397,13 +411,21 @@ export default function SelectedPage() {
           <button
             onClick={handleBuyNow}
             disabled={isOutOfStock}
-            className="flex-[2] flex flex-col items-center justify-center py-4 px-3 rounded-2xl bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 hover:from-orange-600 hover:via-orange-600 hover:to-orange-700 active:from-orange-700 active:via-orange-700 active:to-orange-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95"
+            className={`flex-[2] flex flex-col items-center justify-center py-4 px-3 rounded-2xl transition-all duration-300 transform active:scale-95 ${
+              isOutOfStock 
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed border-2 border-gray-100" 
+                : "bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 hover:from-orange-600 hover:via-orange-600 hover:to-orange-700 shadow-xl hover:shadow-2xl hover:scale-105"
+            }`}
           >
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm text-white font-bold">ซื้อเลย</span>
-              <ArrowRightIcon className="w-5 h-5 text-white" />
+              <span className={`text-sm font-bold ${isOutOfStock ? "text-gray-400" : "text-white"}`}>
+                {isOutOfStock ? "สินค้าหมด" : "ซื้อเลย"}
+              </span>
+              {!isOutOfStock && <ArrowRightIcon className="w-5 h-5 text-white" />}
             </div>
-            <span className="text-2xl font-extrabold text-white leading-tight">
+            <span className={`text-2xl font-extrabold leading-tight ${
+              isOutOfStock ? "text-gray-400" : "text-white"
+            }`}>
               {((totalPrice ?? product.price * weight)).toFixed(2)} บาท
             </span>
           </button>

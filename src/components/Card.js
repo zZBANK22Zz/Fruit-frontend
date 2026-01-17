@@ -1,7 +1,8 @@
 import { useRouter } from "next/router";
 
-const Card = ({ image, name, price, farmDirect = true, productId, unit = 'kg' }) => {
+const Card = ({ image, name, price, farmDirect = true, productId, unit = 'kg', stock = 999 }) => {
   const router = useRouter();
+  const isOutOfStock = stock <= 0;
 
   const handleClick = () => {
     if (productId) {
@@ -19,14 +20,26 @@ const Card = ({ image, name, price, farmDirect = true, productId, unit = 'kg' })
         <img
           src={image}
           alt={name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+          className={`w-full h-full object-cover transition-transform duration-500 ease-out ${
+            isOutOfStock ? "grayscale opacity-60" : "group-hover:scale-110"
+          }`}
           onError={(e) => {
             console.error('Image failed to load:', image);
             e.target.src = '/images/example.jpg'; // Fallback image
           }}
         />
+        {/* Out of Stock Overlay */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+            <div className="px-4 py-1.5 bg-red-600 text-white text-sm font-bold rounded-lg shadow-lg transform -rotate-12 border-2 border-white">
+              สินค้าหมด
+            </div>
+          </div>
+        )}
         {/* Overlay gradient on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        {!isOutOfStock && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        )}
       </div>
 
       {/* Product Info */}
@@ -39,10 +52,14 @@ const Card = ({ image, name, price, farmDirect = true, productId, unit = 'kg' })
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-2">
           <span className="text-xs text-gray-500">{unit === 'piece' ? 'ลูกละ' : 'กิโลกรัมละ'}</span>
-          <p className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-          ${price}
-        </p>
-          <span className="text-xs text-gray-500">บาท</span>
+          <p className={`text-xl sm:text-2xl font-extrabold ${
+            isOutOfStock 
+              ? "text-gray-400" 
+              : "bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent"
+          }`}>
+            ${price}
+          </p>
+          <span className={`text-xs ${isOutOfStock ? "text-gray-400" : "text-gray-500"}`}>บาท</span>
         </div>
 
         {/* Farm Direct Badge */}
