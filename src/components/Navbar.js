@@ -453,9 +453,9 @@ export default function Navbar({ showBackButton = false }) {
             className="flex flex-col cursor-pointer group"
           >
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors flex items-center gap-1">
-              Fruit Shop
-              <span className="text-xs font-normal text-gray-400">|</span>
-              <span className="text-sm font-medium text-gray-600 group-hover:text-orange-500">{userName}</span>
+              {userName}
+              {/* <span className="text-xs font-normal text-gray-400">|</span>
+              <span className="text-sm font-medium text-gray-600 group-hover:text-orange-500">{userName}</span> */}
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 font-medium group-hover:text-orange-400 transition-colors">{greeting}</p>
           </div>
