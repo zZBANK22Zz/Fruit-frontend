@@ -266,42 +266,78 @@ export default function PaymentPage() {
           </div>
         </div>
 
-        {/* QR Code Section */}
+        {/* QR Code Section - Premium Thai QR Template */}
         <div className="px-6 mb-6">
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border-2 border-gray-100">
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">สแกน QR Code เพื่อชำระเงิน</h2>
-              <p className="text-sm text-gray-600 font-medium">เปิดแอปธนาคารของคุณและสแกน QR Code</p>
+          <div className="max-w-md mx-auto bg-[#f0f1f3] rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+            {/* Template Header */}
+            <div className="w-full">
+              <img 
+                src="/thai-qr-header.jpg" 
+                alt="Thai QR Payment Header" 
+                className="w-full h-auto block"
+              />
             </div>
             
-            {qrCode ? (
-              <div className="flex justify-center">
-                <div className="bg-white p-6 rounded-3xl shadow-2xl border-4 border-gray-200 transform hover:scale-105 transition-transform duration-300">
-                  <img
-                    src={qrCode}
-                    alt="PromptPay QR Code"
-                    className="w-full max-w-[300px] mx-auto block"
-                  />
-                </div>
+            <div className="p-6 flex flex-col items-center">
+              {/* PromptPay Logo */}
+              <div className="mb-6">
+                <img 
+                  src="/promptpay-logo.png" 
+                  alt="PromptPay" 
+                  className="h-12 w-auto"
+                />
               </div>
-            ) : (
-              <div className="w-full max-w-[300px] mx-auto aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center border-4 border-dashed border-gray-300">
-                <div className="text-center">
-                  <div className="w-40 h-40 mx-auto bg-white border-4 border-gray-300 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
-                    <svg className="w-24 h-24 text-gray-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2.01M19 8h2M5 20h2.01M19 20h2M12 8h.01M12 16h.01" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-500 text-sm font-medium">กำลังโหลด QR Code...</p>
-                </div>
-              </div>
-            )}
 
-            <div className="mt-8 text-center bg-orange-50 rounded-2xl p-4 border border-orange-200">
-              <p className="text-gray-700 text-sm mb-1 font-semibold">จำนวนเงินที่ต้องชำระ</p>
-              <p className="text-4xl font-extrabold text-orange-600">
-                {paymentAmount.toFixed(2)} <span className="text-lg">บาท</span>
-              </p>
+              {/* QR Code with Center Logo */}
+              <div className="relative bg-white p-4 rounded-xl shadow-lg border-2 border-gray-100 mb-6">
+                {qrCode ? (
+                  <>
+                    <img
+                      src={qrCode}
+                      alt="PromptPay QR Code"
+                      className="w-64 h-64 block"
+                    />
+                    {/* Fixed Logic for Center Logo Overlay */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-1 rounded-md shadow-sm">
+                      <img 
+                        src="/qr-center-logo.png" 
+                        alt="QR Logo" 
+                        className="w-10 h-10"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-64 h-64 flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Details Text */}
+              <div className="text-center space-y-2">
+                <p className="text-[#555a60] text-sm font-medium">สแกน QR เพื่อโอนเงินเข้าบัญชี</p>
+                <h3 className="text-xl font-bold text-gray-800">นาย พงษ์ศักดิ์ เมฆอรุณ</h3>
+                <div className="flex flex-col gap-1 text-[#666c72] text-sm">
+                  <p>เบอร์โทรศัพท์มือถือ xxx-xxx-4394</p>
+                  <p>เลขที่บัญชี 0201xxxx3688</p>
+                </div>
+              </div>
+
+              {/* Amount Display */}
+              <div className="mt-8 w-full bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50 shadow-inner text-center">
+                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">จำนวนเงินที่ต้องชำระ</p>
+                <p className="text-3xl font-black text-orange-600">
+                  {paymentAmount.toFixed(2)} <span className="text-lg">บาท</span>
+                </p>
+              </div>
+            </div>
+            
+            {/* Security Note Footer image-like text */}
+            <div className="bg-gray-100/50 py-3 px-6 border-t border-gray-200 flex items-center justify-center gap-2">
+              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 4.908-3.067 9.126-7.403 10.796a.75.75 0 01-.594 0C5.667 16.126 2.6 11.908 2.6 7.001c0-.68.056-1.35.166-2.002zm7.084 10.64a10.454 10.454 0 005.164-8.639c0-.528-.033-1.047-.1-1.552a10.458 10.458 0 01-4.148-2.618 10.458 10.458 0 01-4.148 2.618 10.453 10.453 0 00-.1 1.552 10.454 10.454 0 005.164 8.639z" clipRule="evenodd" />
+              </svg>
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Secure Payment Transaction</span>
             </div>
           </div>
         </div>
