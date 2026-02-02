@@ -18,6 +18,8 @@ export default function BillPage() {
   const [loading, setLoading] = useState(true);
   const [isVerifying, setIsVerifying] = useState(true);
   const [error, setError] = useState(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
+
 
   const verifyLiffAndAuth = async () => {
     try {
@@ -116,13 +118,19 @@ export default function BillPage() {
   }, [orderId, invoiceId, router.isReady]);
 
   const handleDownloadPDF = async () => {
-    if (!invoice) return;
+    if (!invoice || downloadLoading) return;
 
+    setDownloadLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
       const token = localStorage.getItem('token');
 
-      if (!apiUrl || !token) return;
+      if (!apiUrl || !token) {
+        alert('กรุณาเข้าสู่ระบบก่อนดาวน์โหลด');
+        return;
+      }
+
+      console.log(`Downloading invoice from: ${apiUrl}/api/invoices/${invoice.id}/download`);
 
       const response = await fetch(`${apiUrl}/api/invoices/${invoice.id}/download`, {
         method: 'GET',
@@ -133,20 +141,41 @@ export default function BillPage() {
 
       if (response.ok) {
         const blob = await response.blob();
+        if (blob.size === 0) {
+          throw new Error('ไฟล์ PDF ที่ได้รับมีขนาดเป็น 0');
+        }
+        
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
+        a.style.display = 'none';
         a.href = url;
-        a.download = `invoice-${invoice.invoice_number}.pdf`;
+        a.download = `invoice-${invoice.invoice_number || 'download'}.pdf`;
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        
+        // Small delay before cleanup to ensure download starts
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 100);
+      } else {
+        const errorText = await response.text().catch(() => '');
+        console.error('Download failed:', response.status, errorText);
+        
+        if (response.status === 404) {
+          alert('ไม่พบไฟล์ใบเสร็จบนเซิร์ฟเวอร์ (404)');
+        } else {
+          alert(`ไม่สามารถดาวน์โหลดได้: ${response.status} ${response.statusText}`);
+        }
       }
     } catch (error) {
       console.error('Error downloading PDF:', error);
-      alert('ไม่สามารถดาวน์โหลด PDF ได้');
+      alert('เกิดข้อผิดพลาดในการดาวน์โหลด PDF: ' + error.message);
+    } finally {
+      setDownloadLoading(false);
     }
   };
+
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -249,11 +278,15 @@ export default function BillPage() {
                 <h2 className="text-xl font-bold text-gray-900">ใบเสร็จรับเงิน</h2>
                 <button
                   onClick={handleDownloadPDF}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-orange-300 rounded-lg hover:bg-orange-50 transition-colors"
+                  disabled={downloadLoading}
+                  className={`flex items-center gap-2 px-4 py-2 bg-white border-2 border-orange-300 rounded-lg transition-colors ${downloadLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-50'}`}
                 >
-                  <DocumentArrowDownIcon className="w-5 h-5 text-orange-600" />
-                  <span className="text-sm font-medium text-orange-600">ดาวน์โหลด PDF</span>
+                  <DocumentArrowDownIcon className={`w-5 h-5 text-orange-600 ${downloadLoading ? 'animate-bounce' : ''}`} />
+                  <span className="text-sm font-medium text-orange-600">
+                    {downloadLoading ? 'กำลังโหลด...' : 'ดาวน์โหลด PDF'}
+                  </span>
                 </button>
+
               </div>
               <p className="text-sm text-gray-600">เลขที่: <span className="font-semibold">{invoice.invoice_number}</span></p>
             </div>
