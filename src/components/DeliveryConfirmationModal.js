@@ -22,8 +22,8 @@ export default function DeliveryConfirmationModal({ isOpen, onClose, onConfirm, 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('รูปภาพมีขนาดใหญ่เกินไป (จำกัด 5MB)');
+      if (file.size > 3 * 1024 * 1024) { // 3MB limit for Vercel (base64 will be ~4MB)
+        alert('รูปภาพมีขนาดใหญ่เกินไป (จำกัด 3MB เพื่อความเสถียร)');
         return;
       }
       
