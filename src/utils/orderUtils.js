@@ -127,3 +127,38 @@ export const fetchOrderById = async (orderId) => {
     return null;
   }
 };
+
+/**
+ * Upload delivery confirmation for an order
+ * @param {string} orderId - ID of order
+ * @param {Object} deliveryData - Delivery details (image, date, time, sender, etc.)
+ * @returns {Promise<Object>} Response data
+ */
+export const uploadDeliveryConfirmation = async (orderId, deliveryData) => {
+  try {
+    const token = localStorage.getItem('token');
+    const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+    
+    if (!token || !apiUrl) throw new Error('Authentication required');
+
+    const response = await fetch(`${apiUrl}/api/orders/${orderId}/delivery-confirmation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(deliveryData),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || 'Failed to upload delivery confirmation');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error uploading delivery confirmation:', error);
+    throw error;
+  }
+};
+

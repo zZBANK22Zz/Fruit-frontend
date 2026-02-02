@@ -336,6 +336,60 @@ export default function BillPage() {
                 </div>
               )}
 
+              {/* Delivery Confirmation (Proof of Delivery) */}
+              {invoice.delivery_confirmation && (
+                <div className="bg-orange-50 rounded-2xl p-6 border-2 border-orange-100 shadow-sm overflow-hidden">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center shadow-md shadow-orange-200">
+                      <TruckIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-lg font-black text-gray-900 tracking-tight">หลักฐานการจัดส่งสินค้า</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Delivery Image */}
+                    {invoice.delivery_confirmation.delivery_image && (
+                      <div className="relative group rounded-2xl overflow-hidden shadow-md border-2 border-white aspect-video md:aspect-square">
+                        <img 
+                          src={`data:image/jpeg;base64,${invoice.delivery_confirmation.delivery_image}`} 
+                          alt="Delivery Proof" 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Delivery Details */}
+                    <div className="space-y-4 flex flex-col justify-center">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">ข้อมูลการจัดส่งสำเร็จ</p>
+                        <div className="flex items-center gap-2 text-gray-900 font-bold">
+                          <span>{formatDate(invoice.delivery_confirmation.delivery_date)}</span>
+                          <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                          <span>เวลา {invoice.delivery_confirmation.delivery_time.slice(0, 5)} น.</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ชื่อผู้จัดส่ง</p>
+                          <p className="text-sm text-gray-900 font-bold">{invoice.delivery_confirmation.sender_name}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ชื่อผู้รับ</p>
+                          <p className="text-sm text-gray-900 font-bold">{invoice.delivery_confirmation.receiver_name}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 pt-2 border-t border-orange-200/50">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ที่อยู่รับสินค้า</p>
+                        <p className="text-xs text-gray-700 leading-relaxed italic">{invoice.delivery_confirmation.receiver_address}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+
               {/* Order Items */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">รายการสินค้า</h3>

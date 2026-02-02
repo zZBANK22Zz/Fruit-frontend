@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Navbar from "../../components/Navbar";
 import Button from "../../components/Button";
-import { fetchAllOrders, updateOrderStatus } from "../../utils/orderUtils";
+import { fetchAllOrders, updateOrderStatus, uploadDeliveryConfirmation } from "../../utils/orderUtils";
 import { notifySuccess, notifyError } from "../../utils/notificationUtils";
+import DeliveryConfirmationModal from "../../components/DeliveryConfirmationModal";
 import { 
   ShoppingBagIcon, 
   ClockIcon, 
@@ -21,6 +22,8 @@ export default function AdminOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+  const [selectedOrderForDelivery, setSelectedOrderForDelivery] = useState(null);
 
   const statuses = [
     { value: 'paid', label: 'ชำระเงินแล้ว', color: 'bg-blue-100 text-blue-700' },
@@ -77,6 +80,14 @@ export default function AdminOrdersPage() {
   };
 
   const handleStatusChange = async (orderId, newStatus) => {
+    // If status is "shipped", show the delivery confirmation modal instead
+    if (newStatus === 'shipped') {
+      const order = orders.find(o => o.id === orderId);
+      setSelectedOrderForDelivery(order);
+      setIsDeliveryModalOpen(true);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await updateOrderStatus(orderId, newStatus);
@@ -84,6 +95,20 @@ export default function AdminOrdersPage() {
       await loadOrders(); // Refresh list
     } catch (error) {
       notifyError('อัปเดตล้มเหลว', error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeliveryConfirm = async (deliveryData) => {
+    setIsSubmitting(true);
+    try {
+      await uploadDeliveryConfirmation(selectedOrderForDelivery.id, deliveryData);
+      notifySuccess('ส่งสินค้าสำเร็จ', 'บันทึกข้อมูลการจัดส่งเรียบร้อยแล้ว');
+      setIsDeliveryModalOpen(false);
+      await loadOrders();
+    } catch (error) {
+      notifyError('เกิดข้อผิดพลาด', error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -323,6 +348,14 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       </div>
+
+      <DeliveryConfirmationModal 
+        isOpen={isDeliveryModalOpen}
+        onClose={() => setIsDeliveryModalOpen(false)}
+        onConfirm={handleDeliveryConfirm}
+        order={selectedOrderForDelivery}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }
