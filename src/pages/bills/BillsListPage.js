@@ -7,13 +7,23 @@ import {
   CurrencyDollarIcon
 } from "@heroicons/react/24/outline";
 import Navbar from "../../components/Navbar";
-import { fetchUserOrders } from "../../utils/orderUtils";
+import { fetchUserOrders, fetchOrderById } from "../../utils/orderUtils";
+import { 
+  XMarkIcon,
+  CheckBadgeIcon,
+  PhotoIcon
+} from "@heroicons/react/24/outline";
 
 export default function BillsListPage() {
   const router = useRouter();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Modal states
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
 
   useEffect(() => {
     loadInvoices();
@@ -28,6 +38,20 @@ export default function BillsListPage() {
       setError('เกิดข้อผิดพลาดในการโหลดใบเสร็จ');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOrderClick = async (orderId) => {
+    setIsModalOpen(true);
+    setIsDetailLoading(true);
+    try {
+      const detail = await fetchOrderById(orderId);
+      setSelectedOrder(detail);
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      alert('ไม่สามารถโหลดรายละเอียดออเดอร์ได้');
+    } finally {
+      setIsDetailLoading(false);
     }
   };
 
@@ -125,7 +149,7 @@ export default function BillsListPage() {
               {invoices.map((invoice) => (
                 <div
                   key={invoice.id}
-                  onClick={() => router.push(`/bills/BillPage?invoiceId=${invoice.id}`)}
+                  onClick={() => handleOrderClick(invoice.id)}
                   className="bg-white rounded-xl shadow-md border border-gray-200 p-5 hover:shadow-lg transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -166,6 +190,144 @@ export default function BillsListPage() {
           )}
         </div>
       </div>
+
+      {/* Order Detail Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">รายละเอียดคำสั่งซื้อ</h2>
+                {selectedOrder && (
+                  <p className="text-sm text-gray-500">{selectedOrder.order_number}</p>
+                )}
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {isDetailLoading ? (
+                <div className="py-12 flex flex-col items-center justify-center">
+                  <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mb-3"></div>
+                  <p className="text-gray-500 text-sm">กำลังโหลดข้อมูล...</p>
+                </div>
+              ) : selectedOrder ? (
+                <div className="space-y-6">
+                  {/* Status & Date */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
+                    <div>
+                      <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">สถานะ</p>
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(selectedOrder.status)}`}>
+                        {getStatusLabel(selectedOrder.status)}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">วันที่ชำระเงิน</p>
+                      <p className="text-sm font-bold text-gray-900">{formatDate(selectedOrder.payment_date || selectedOrder.created_at)}</p>
+                    </div>
+                  </div>
+
+                  {/* Items List */}
+                  <div>
+                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                       <DocumentTextIcon className="w-4 h-4 text-orange-500" />
+                       รายการสินค้า
+                    </h3>
+                    <div className="space-y-3">
+                      {selectedOrder.items?.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                          {item.fruit_image && (
+                            <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 border border-gray-200">
+                              <img 
+                                src={`data:image/jpeg;base64,${item.fruit_image}`} 
+                                alt={item.fruit_name} 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-gray-900 truncate">{item.fruit_name}</p>
+                            <p className="text-xs text-gray-500">
+                              {parseFloat(item.quantity).toFixed(2)} กก. × {parseFloat(item.price).toFixed(2)} บาท
+                            </p>
+                          </div>
+                          <p className="text-sm font-black text-orange-600">
+                            {parseFloat(item.subtotal).toFixed(2)} บาท
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Payment Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                        <CurrencyDollarIcon className="w-4 h-4 text-orange-500" />
+                        สรุปยอดเงิน
+                      </h3>
+                      <div className="space-y-2 bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm">
+                        <div className="flex justify-between text-gray-600">
+                          <span>ยอดรวม</span>
+                          <span>{parseFloat(selectedOrder.total_amount).toFixed(2)} บาท</span>
+                        </div>
+                        <div className="flex justify-between text-gray-900 font-black text-base pt-2 border-t border-gray-200">
+                          <span>ยอดรวมทั้งสิ้น</span>
+                          <span className="text-orange-600">{parseFloat(selectedOrder.total_amount).toFixed(2)} บาท</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Proof (Slip) */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                        <PhotoIcon className="w-4 h-4 text-orange-500" />
+                        หลักฐานการโอน
+                      </h3>
+                      {selectedOrder.payment_slip ? (
+                        <div className="relative group aspect-[3/4] rounded-xl overflow-hidden border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center">
+                          <img 
+                            src={`data:image/jpeg;base64,${selectedOrder.payment_slip.image_data}`} 
+                            alt="Payment Slip" 
+                            className="w-full h-full object-contain"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                            <span className="bg-white/90 text-gray-900 text-[10px] font-black px-3 py-1 rounded-full shadow-lg">คลิกเพื่อดูรูปขยาย</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="aspect-[3/4] rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
+                          <PhotoIcon className="w-10 h-10 text-gray-300 mb-2" />
+                          <p className="text-xs text-gray-400 font-medium">ไม่มีรูปหลักฐานการโอน</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500 italic">ไม่พบข้อมูล</div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-100 bg-gray-50/50">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors shadow-lg"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
