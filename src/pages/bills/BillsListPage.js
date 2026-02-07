@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import liff from "@line/liff";
 import { 
   ArrowLeftIcon,
   DocumentTextIcon,
@@ -73,18 +74,25 @@ export default function BillsListPage() {
 
       const idToFetch = selectedOrder.invoice_id || selectedOrder.id;
       const downloadUrl = `${apiUrl}/api/invoices/${idToFetch}/download?token=${token}`;
-
+      
       // Detection for LINE or Mobile browser where Blobs often fail
-      const isLine = /Line/i.test(navigator.userAgent);
+      const isLine = /Line/i.test(navigator.userAgent) || (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient());
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-      if (isLine || isMobile) {
-        // Direct link approach for LINE/Mobile
+      if (isLine) {
+        // Official way to open PDF in external browser for LIFF
+        // This solves the text-file-link issue on iPhone
+        if (liff.isInClient && liff.isInClient()) {
+          liff.openWindow({
+            url: downloadUrl,
+            external: true
+          });
+        } else {
+          window.location.href = downloadUrl;
+        }
+      } else if (isMobile) {
+        // Direct link approach for Mobile Browsers
         window.location.href = downloadUrl;
-        // Also try opening in new tab as fallback
-        setTimeout(() => {
-          window.open(downloadUrl, '_blank');
-        }, 500);
       } else {
         // Standard Blob approach for Desktop (better filename handling)
         const response = await fetch(downloadUrl);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import liff from "@line/liff";
 import { 
   CheckCircleIcon,
   ArrowLeftIcon,
@@ -133,14 +134,20 @@ export default function BillPage() {
       const downloadUrl = `${apiUrl}/api/invoices/${invoice.id}/download?token=${token}`;
 
       // Detection for LINE or Mobile browser
-      const isLine = /Line/i.test(navigator.userAgent);
+      const isLine = /Line/i.test(navigator.userAgent) || (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient());
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-      if (isLine || isMobile) {
+      if (isLine) {
+        if (liff.isInClient && liff.isInClient()) {
+          liff.openWindow({
+            url: downloadUrl,
+            external: true
+          });
+        } else {
+          window.location.href = downloadUrl;
+        }
+      } else if (isMobile) {
         window.location.href = downloadUrl;
-        setTimeout(() => {
-          window.open(downloadUrl, '_blank');
-        }, 500);
       } else {
         const response = await fetch(downloadUrl);
 
