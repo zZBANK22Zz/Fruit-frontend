@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Navbar from "../../components/Navbar";
 import Button from "../../components/Button";
-import { fetchAllOrders, updateOrderStatus, uploadDeliveryConfirmation } from "../../utils/orderUtils";
+import { fetchAllOrders, updateOrderStatus, uploadDeliveryConfirmation, fetchOrderById } from "../../utils/orderUtils";
 import { notifySuccess, notifyError } from "../../utils/notificationUtils";
 import DeliveryConfirmationModal from "../../components/DeliveryConfirmationModal";
 import { 
@@ -11,7 +11,10 @@ import {
   CheckCircleIcon, 
   TruckIcon,
   MagnifyingGlassIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  PhotoIcon,
+  DocumentArrowDownIcon,
+  XMarkIcon
 } from "@heroicons/react/24/outline";
 
 export default function AdminOrdersPage() {
@@ -24,6 +27,12 @@ export default function AdminOrdersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
   const [selectedOrderForDelivery, setSelectedOrderForDelivery] = useState(null);
+  
+  // Slip Modal states
+  const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
+  const [selectedOrderForSlip, setSelectedOrderForSlip] = useState(null);
+  const [isSlipLoading, setIsSlipLoading] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   const statuses = [
     { value: 'paid', label: 'ชำระเงินแล้ว', color: 'bg-blue-100 text-blue-700' },
@@ -111,6 +120,67 @@ export default function AdminOrdersPage() {
       notifyError('เกิดข้อผิดพลาด', error.message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleViewSlip = async (orderId) => {
+    setIsSlipModalOpen(true);
+    setIsSlipLoading(true);
+    try {
+      const detail = await fetchOrderById(orderId);
+      setSelectedOrderForSlip(detail);
+    } catch (error) {
+      console.error('Error loading slip details:', error);
+      notifyError('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดหลักฐานการโอนได้');
+    } finally {
+      setIsSlipLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!selectedOrderForSlip || downloadLoading) return;
+
+    setDownloadLoading(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+      const token = localStorage.getItem('token');
+
+      if (!apiUrl || !token) {
+        alert('กรุณาเข้าสู่ระบบก่อนดาวน์โหลด');
+        return;
+      }
+
+      const idToFetch = selectedOrderForSlip.invoice_id || selectedOrderForSlip.id;
+
+      const response = await fetch(`${apiUrl}/api/invoices/${idToFetch}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `invoice-${selectedOrderForSlip.invoice_number || 'download'}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 100);
+      } else {
+        notifyError('ดาวน์โหลดล้มเหลว', `Error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      notifyError('เกิดข้อผิดพลาด', error.message);
+    } finally {
+      setDownloadLoading(false);
     }
   };
 
@@ -258,6 +328,13 @@ export default function AdminOrdersPage() {
                               <option value="completed">เตรียมสินค้าเสร็จแล้ว</option>
                               <option value="shipped">จัดส่งแล้ว</option>
                             </select>
+                            <button
+                              onClick={() => handleViewSlip(order.id)}
+                              className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"
+                              title="ดูหลักฐานการโอน"
+                            >
+                              <PhotoIcon className="w-5 h-5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -312,6 +389,13 @@ export default function AdminOrdersPage() {
                         <option value="completed">เตรียมสินค้าเสร็จแล้ว</option>
                         <option value="shipped">จัดส่งแล้ว</option>
                       </select>
+                      <button
+                        onClick={() => handleViewSlip(order.id)}
+                        className="flex-shrink-0 p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-2 font-bold"
+                      >
+                        <PhotoIcon className="w-5 h-5" />
+                        <span>ดูสลิป</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -356,6 +440,103 @@ export default function AdminOrdersPage() {
         order={selectedOrderForDelivery}
         isSubmitting={isSubmitting}
       />
+
+      {/* Payment Slip Modal for Admin */}
+      {isSlipModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="text-xl font-black text-gray-900">หลักฐานการชำระเงิน</h3>
+                {selectedOrderForSlip && (
+                  <p className="text-sm text-gray-500 font-bold">#{selectedOrderForSlip.order_number}</p>
+                )}
+              </div>
+              <button 
+                onClick={() => setIsSlipModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {isSlipLoading ? (
+                <div className="py-20 flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                  <p className="text-gray-500 font-bold italic">กำลังโหลดหลักฐาน...</p>
+                </div>
+              ) : selectedOrderForSlip ? (
+                <div className="space-y-6">
+                  {/* Slip Image */}
+                  {selectedOrderForSlip.payment_slip ? (
+                    <div className="relative rounded-2xl overflow-hidden border-4 border-gray-50 bg-gray-50 shadow-inner group">
+                      <img 
+                        src={`data:image/jpeg;base64,${selectedOrderForSlip.payment_slip.image_data}`} 
+                        alt="Payment Slip" 
+                        className="w-full h-auto object-contain max-h-[500px]"
+                      />
+                      <div className="absolute top-4 right-4">
+                        <button
+                          onClick={handleDownloadPDF}
+                          disabled={downloadLoading}
+                          className="flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur shadow-lg border border-gray-200 rounded-xl text-xs font-black text-orange-600 hover:bg-orange-50 transition-all active:scale-95"
+                        >
+                          <DocumentArrowDownIcon className={`w-4 h-4 ${downloadLoading ? 'animate-bounce' : ''}`} />
+                          {downloadLoading ? 'กำลังโหลด...' : 'ดาวโหลดหลักฐานการชำระเงิน'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-20 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                      <PhotoIcon className="w-16 h-16 text-gray-200 mb-4" />
+                      <p className="text-gray-400 font-bold">ยังไม่มีการอัปโหลดหลักฐาน</p>
+                    </div>
+                  )}
+
+                  {/* Payment Details */}
+                  {selectedOrderForSlip.payment_slip && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">ยอดเงินในสลิป</p>
+                        <p className="text-lg font-black text-gray-900">฿{parseFloat(selectedOrderForSlip.payment_slip.amount || selectedOrderForSlip.total_amount).toFixed(2)}</p>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">วันที่โอน</p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {new Date(selectedOrderForSlip.payment_slip.payment_date).toLocaleDateString('th-TH', {
+                            day: 'numeric', month: 'short', year: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Customer Notes */}
+                  {selectedOrderForSlip.notes && (
+                    <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
+                      <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">หมายเหตุจากลูกค้า</p>
+                      <p className="text-sm text-gray-700 leading-relaxed">{selectedOrderForSlip.notes}</p>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-100 bg-gray-50/50">
+              <button
+                onClick={() => setIsSlipModalOpen(false)}
+                className="w-full py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
