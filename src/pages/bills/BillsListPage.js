@@ -71,38 +71,43 @@ export default function BillsListPage() {
         return;
       }
 
-      // Use invoice_id from the detailed order data
       const idToFetch = selectedOrder.invoice_id || selectedOrder.id;
+      const downloadUrl = `${apiUrl}/api/invoices/${idToFetch}/download?token=${token}`;
 
-      const response = await fetch(`${apiUrl}/api/invoices/${idToFetch}/download`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      // Detection for LINE or Mobile browser where Blobs often fail
+      const isLine = /Line/i.test(navigator.userAgent);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-      if (response.ok) {
-        const blob = await response.blob();
-        if (blob.size === 0) {
-          throw new Error('ไฟล์ PDF ที่ได้รับมีขนาดเป็น 0');
-        }
-        
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `invoice-${selectedOrder.invoice_number || 'download'}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        
+      if (isLine || isMobile) {
+        // Direct link approach for LINE/Mobile
+        window.location.href = downloadUrl;
+        // Also try opening in new tab as fallback
         setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        }, 100);
+          window.open(downloadUrl, '_blank');
+        }, 500);
       } else {
-        const errorText = await response.text().catch(() => '');
-        console.error('Download failed:', response.status, errorText);
-        alert(`ไม่สามารถดาวน์โหลดได้: ${response.status} ${response.statusText}`);
+        // Standard Blob approach for Desktop (better filename handling)
+        const response = await fetch(downloadUrl);
+
+        if (response.ok) {
+          const blob = await response.blob();
+          if (blob.size === 0) throw new Error('ไฟล์ PDF มีขนาดเป็น 0');
+          
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `invoice-${selectedOrder.invoice_number || 'download'}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          }, 100);
+        } else {
+          throw new Error(`Download failed: ${response.status}`);
+        }
       }
     } catch (error) {
       console.error('Error downloading PDF:', error);

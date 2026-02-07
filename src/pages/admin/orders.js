@@ -151,30 +151,37 @@ export default function AdminOrdersPage() {
       }
 
       const idToFetch = selectedOrderForSlip.invoice_id || selectedOrderForSlip.id;
+      const downloadUrl = `${apiUrl}/api/invoices/${idToFetch}/download?token=${token}`;
 
-      const response = await fetch(`${apiUrl}/api/invoices/${idToFetch}/download`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      // Detection for LINE or Mobile browser
+      const isLine = /Line/i.test(navigator.userAgent);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `invoice-${selectedOrderForSlip.invoice_number || 'download'}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        
+      if (isLine || isMobile) {
+        window.location.href = downloadUrl;
         setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        }, 100);
+          window.open(downloadUrl, '_blank');
+        }, 500);
       } else {
-        notifyError('ดาวน์โหลดล้มเหลว', `Error: ${response.status}`);
+        const response = await fetch(downloadUrl);
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `invoice-${selectedOrderForSlip.invoice_number || 'download'}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          }, 100);
+        } else {
+          notifyError('ดาวน์โหลดล้มเหลว', `Error: ${response.status}`);
+        }
       }
     } catch (error) {
       console.error('Error downloading PDF:', error);

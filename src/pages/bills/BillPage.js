@@ -130,42 +130,45 @@ export default function BillPage() {
         return;
       }
 
-      console.log(`Downloading invoice from: ${apiUrl}/api/invoices/${invoice.id}/download`);
+      const downloadUrl = `${apiUrl}/api/invoices/${invoice.id}/download?token=${token}`;
 
-      const response = await fetch(`${apiUrl}/api/invoices/${invoice.id}/download`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      // Detection for LINE or Mobile browser
+      const isLine = /Line/i.test(navigator.userAgent);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-      if (response.ok) {
-        const blob = await response.blob();
-        if (blob.size === 0) {
-          throw new Error('ไฟล์ PDF ที่ได้รับมีขนาดเป็น 0');
-        }
-        
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `invoice-${invoice.invoice_number || 'download'}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        
-        // Small delay before cleanup to ensure download starts
+      if (isLine || isMobile) {
+        window.location.href = downloadUrl;
         setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        }, 100);
+          window.open(downloadUrl, '_blank');
+        }, 500);
       } else {
-        const errorText = await response.text().catch(() => '');
-        console.error('Download failed:', response.status, errorText);
-        
-        if (response.status === 404) {
-          alert('ไม่พบไฟล์ใบเสร็จบนเซิร์ฟเวอร์ (404)');
+        const response = await fetch(downloadUrl);
+
+        if (response.ok) {
+          const blob = await response.blob();
+          if (blob.size === 0) throw new Error('ไฟล์ PDF มีขนาดเป็น 0');
+          
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `invoice-${invoice.invoice_number || 'download'}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          }, 100);
         } else {
-          alert(`ไม่สามารถดาวน์โหลดได้: ${response.status} ${response.statusText}`);
+          const errorText = await response.text().catch(() => '');
+          console.error('Download failed:', response.status, errorText);
+          
+          if (response.status === 404) {
+            alert('ไม่พบไฟล์ใบเสร็จบนเซิร์ฟเวอร์ (404)');
+          } else {
+            alert(`ไม่สามารถดาวน์โหลดได้: ${response.status} ${response.statusText}`);
+          }
         }
       }
     } catch (error) {
