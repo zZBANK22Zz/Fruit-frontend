@@ -152,19 +152,23 @@ export default function AdminOrdersPage() {
       }
 
       const idToFetch = selectedOrderForSlip.invoice_id || selectedOrderForSlip.id;
-      const downloadUrl = `${apiUrl}/api/invoices/${idToFetch}/download?token=${token}`;
+      const downloadUrl = `${apiUrl}/api/invoices/${idToFetch}/download?token=${encodeURIComponent(token)}&v=${Date.now()}`;
 
       // Detection for LINE or Mobile browser
-      const isLine = /Line/i.test(navigator.userAgent) || (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient());
+      const isLine = /Line/i.test(navigator.userAgent) || (typeof window !== 'undefined' && window.liff?.isInClient?.());
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isLine) {
-        if (liff.isInClient && liff.isInClient()) {
-          liff.openWindow({
-            url: downloadUrl,
-            external: true
-          });
-        } else {
+        try {
+          if (liff && liff.openWindow) {
+            liff.openWindow({
+              url: downloadUrl,
+              external: true
+            });
+          } else {
+            window.location.href = downloadUrl;
+          }
+        } catch (e) {
           window.location.href = downloadUrl;
         }
       } else if (isMobile) {
