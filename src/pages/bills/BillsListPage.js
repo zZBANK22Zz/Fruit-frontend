@@ -11,7 +11,9 @@ import { fetchUserOrders, fetchOrderById } from "../../utils/orderUtils";
 import { 
   XMarkIcon,
   CheckBadgeIcon,
-  PhotoIcon
+  PhotoIcon,
+  TruckIcon,
+  DocumentArrowDownIcon
 } from "@heroicons/react/24/outline";
 
 export default function BillsListPage() {
@@ -19,6 +21,7 @@ export default function BillsListPage() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
   
   // Modal states
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -52,6 +55,60 @@ export default function BillsListPage() {
       alert('ไม่สามารถโหลดรายละเอียดออเดอร์ได้');
     } finally {
       setIsDetailLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!selectedOrder || downloadLoading) return;
+
+    setDownloadLoading(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+      const token = localStorage.getItem('token');
+
+      if (!apiUrl || !token) {
+        alert('กรุณาเข้าสู่ระบบก่อนดาวน์โหลด');
+        return;
+      }
+
+      // Use invoice_id from the detailed order data
+      const idToFetch = selectedOrder.invoice_id || selectedOrder.id;
+
+      const response = await fetch(`${apiUrl}/api/invoices/${idToFetch}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        if (blob.size === 0) {
+          throw new Error('ไฟล์ PDF ที่ได้รับมีขนาดเป็น 0');
+        }
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `invoice-${selectedOrder.invoice_number || 'download'}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 100);
+      } else {
+        const errorText = await response.text().catch(() => '');
+        console.error('Download failed:', response.status, errorText);
+        alert(`ไม่สามารถดาวน์โหลดได้: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('เกิดข้อผิดพลาดในการดาวน์โหลด PDF: ' + error.message);
+    } finally {
+      setDownloadLoading(false);
     }
   };
 
@@ -200,7 +257,17 @@ export default function BillsListPage() {
               <div>
                 <h2 className="text-xl font-bold text-gray-900">รายละเอียดคำสั่งซื้อ</h2>
                 {selectedOrder && (
-                  <p className="text-sm text-gray-500">{selectedOrder.order_number}</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm text-gray-500">{selectedOrder.order_number}</p>
+                    <button
+                      onClick={handleDownloadPDF}
+                      disabled={downloadLoading}
+                      className={`flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors ${downloadLoading ? 'opacity-50' : ''}`}
+                    >
+                      <DocumentArrowDownIcon className={`w-4 h-4 ${downloadLoading ? 'animate-bounce' : ''}`} />
+                      {downloadLoading ? 'กำลังโหลด...' : 'ดาวน์โหลด PDF'}
+                    </button>
+                  </div>
                 )}
               </div>
               <button 
@@ -265,6 +332,62 @@ export default function BillsListPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Delivery Confirmation (Proof of Delivery) */}
+                  {selectedOrder.delivery_confirmation && (
+                    <div className="bg-orange-50 rounded-2xl p-6 border-2 border-orange-100 shadow-sm overflow-hidden">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center shadow-md shadow-orange-200">
+                          <TruckIcon className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-black text-gray-900 tracking-tight">หลักฐานการจัดส่งสินค้า</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Delivery Image */}
+                        {selectedOrder.delivery_confirmation.delivery_image && (
+                          <div className="relative group rounded-2xl overflow-hidden shadow-md border-2 border-white aspect-video md:aspect-square">
+                            <img 
+                              src={`data:image/jpeg;base64,${selectedOrder.delivery_confirmation.delivery_image}`} 
+                              alt="Delivery Proof" 
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Delivery Details */}
+                        <div className="space-y-4 flex flex-col justify-center">
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">ข้อมูลการจัดส่งสำเร็จ</p>
+                            <div className="flex items-center gap-2 text-gray-900 font-bold">
+                              <span>{formatDate(selectedOrder.delivery_confirmation.delivery_date)}</span>
+                              <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                              <span>เวลา {selectedOrder.delivery_confirmation.delivery_time?.slice(0, 5)} น.</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ชื่อผู้จัดส่ง</p>
+                              <p className="text-sm text-gray-900 font-bold">{selectedOrder.delivery_confirmation.sender_name}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ชื่อผู้รับ</p>
+                              <p className="text-sm text-gray-900 font-bold">{selectedOrder.delivery_confirmation.receiver_name}</p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1 pt-2 border-t border-orange-200/50">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ที่อยู่รับสินค้า</p>
+                            <p className="text-xs text-gray-700 leading-relaxed italic">{selectedOrder.delivery_confirmation.receiver_address}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Progress Line Divider */}
+                  <div className="border-t-2 border-dashed border-gray-100"></div>
 
                   {/* Payment Details */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
