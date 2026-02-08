@@ -142,6 +142,37 @@ const GenericFruitIcon = () => (
   </IconWrapper>
 );
 
+const AppleIcon = () => (
+  <IconWrapper>
+    <path d="M16 23C13 23 11 25 8 25C5 25 2 23 2 17C2 13 4 10 7 10C9 10 11 12 12 12C14 12 16 10 18 10C21 10 24 13 24 17C24 23 20 25 16 23Z" fill="#EF4444" />
+    <path d="M16 23C16 23 18 20 18 17" stroke="#991B1B" strokeWidth="1" strokeOpacity="0.3" fill="none" />
+    <path d="M15 10C15 10 16 6 19 4" stroke="#4D7C0F" strokeWidth="2" strokeLinecap="round" />
+    <path d="M15 10C15 10 14 6 12 5C10 4 12 10 15 10Z" fill="#65A30D" />
+    <circle cx="9" cy="15" r="1.5" fill="white" fillOpacity="0.3" />
+  </IconWrapper>
+);
+
+const StrawberryIcon = () => (
+  <IconWrapper>
+    <path d="M16 28C16 28 6 22 4 14C3 9 7 6 10 6C12 6 15 8 16 9C17 8 20 6 22 6C25 6 29 9 28 14C26 22 16 28 16 28Z" fill="#F43F5E" />
+    {/* Seeds */}
+    <circle cx="10" cy="12" r="0.8" fill="#7F1D1D" fillOpacity="0.5" />
+    <circle cx="14" cy="14" r="0.8" fill="#7F1D1D" fillOpacity="0.5" />
+    <circle cx="18" cy="14" r="0.8" fill="#7F1D1D" fillOpacity="0.5" />
+    <circle cx="22" cy="12" r="0.8" fill="#7F1D1D" fillOpacity="0.5" />
+    <circle cx="12" cy="18" r="0.8" fill="#7F1D1D" fillOpacity="0.5" />
+    <circle cx="16" cy="20" r="0.8" fill="#7F1D1D" fillOpacity="0.5" />
+    <circle cx="20" cy="18" r="0.8" fill="#7F1D1D" fillOpacity="0.5" />
+    <circle cx="16" cy="24" r="0.8" fill="#7F1D1D" fillOpacity="0.5" />
+    {/* Leaves */}
+    <path d="M16 9L12 4" stroke="#15803D" strokeWidth="2" strokeLinecap="round" />
+    <path d="M16 9L20 4" stroke="#15803D" strokeWidth="2" strokeLinecap="round" />
+    <path d="M16 9L16 3" stroke="#15803D" strokeWidth="2" strokeLinecap="round" />
+    <path d="M16 9C16 9 13 8 11 8" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" />
+    <path d="M16 9C16 9 19 8 21 8" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" />
+  </IconWrapper>
+);
+
 export const getCategoryIcon = (categoryName) => {
   const norm = categoryName.toLowerCase().trim();
   
@@ -150,10 +181,12 @@ export const getCategoryIcon = (categoryName) => {
   if (norm.includes('แตงโม')) return <WatermelonIcon />;
   if (norm.includes('ส้ม')) return <OrangeIcon />;
   if (norm.includes('มะละกอ')) return <PapayaIcon />;
-  if (norm.includes('สับปะรด')) return <PineappleIcon />;
+  if (norm.includes('สับปะรด') || norm.includes('สับรด')) return <PineappleIcon />;
   if (norm.includes('แก้วมังกร')) return <DragonFruitIcon />;
   if (norm.includes('ลิ้นจี่')) return <LycheeIcon />;
   if (norm.includes('มะม่วง')) return <MangoIcon />;
+  if (norm.includes('แอปเปิ้ล') || norm.includes('apple')) return <AppleIcon />;
+  if (norm.includes('สตอ') || norm.includes('สตรอ') || norm.includes('strawberry')) return <StrawberryIcon />;
   
   return <GenericFruitIcon />;
 };
