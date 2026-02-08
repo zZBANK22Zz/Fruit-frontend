@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   UserIcon, 
   BellIcon, 
@@ -472,98 +473,139 @@ export default function Navbar({ showBackButton = false }) {
             <HomeIcon className="w-6 h-6 sm:w-7 sm:h-7" />
           </button>
 
-          {/* Notification Bell Icon */}
+            {/* Notification Bell Icon */}
           <div className="relative" ref={notificationDropdownRef}>
             <button 
               onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
-              className="relative p-2 text-gray-600 hover:text-gray-800 transition-colors"
+              className="relative p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all duration-300 transform hover:scale-110 active:scale-95"
             >
-              <BellIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+              <motion.div
+                animate={unreadCount > 0 ? { rotate: [0, -10, 10, -10, 10, 0] } : {}}
+                transition={{ 
+                    duration: 0.5, 
+                    repeat: unreadCount > 0 ? Infinity : 0, 
+                    repeatDelay: 5 
+                }}
+              >
+                  <BellIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+              </motion.div>
               {/* Notification Badge */}
-              {unreadCount > 0 && (
-                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
+              <AnimatePresence>
+                {unreadCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white"
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
 
             {/* Notification Dropdown */}
-            {showNotificationDropdown && (
-              <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
-                {/* Header */}
-                <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-                  <h3 className="font-semibold text-gray-800">การแจ้งเตือน</h3>
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={handleMarkAllAsRead}
-                      className="text-xs text-orange-600 hover:text-orange-700 font-medium"
-                    >
-                      อ่านทั้งหมด
-                    </button>
-                  )}
-                </div>
-
-                {/* Notifications List */}
-                <div className="overflow-y-auto max-h-80">
-                  {notifications.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-gray-500">
-                      <BellIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p className="text-sm">ไม่มีการแจ้งเตือน</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-gray-100">
-                      {notifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          onClick={() => handleNotificationClick(notification.id)}
-                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors relative ${
-                            !notification.read ? 'bg-blue-50/50' : ''
-                          }`}
+            <AnimatePresence>
+                {showNotificationDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 z-50 max-h-[32rem] overflow-hidden flex flex-col ring-1 ring-black/5"
+                  >
+                    {/* Header */}
+                    <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 backdrop-blur-sm">
+                      <div className="flex items-center gap-2">
+                        <BellIcon className="w-5 h-5 text-orange-500" />
+                        <h3 className="font-bold text-gray-900 text-sm">การแจ้งเตือน</h3>
+                      </div>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          className="text-xs text-orange-600 hover:text-orange-700 font-medium hover:underline underline-offset-2 transition-all"
                         >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 mt-0.5">
-                              {getNotificationIcon(notification.type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1">
-                                  <p className={`text-sm font-medium ${
-                                    !notification.read ? 'text-gray-900' : 'text-gray-700'
-                                  }`}>
-                                    {notification.title}
-                                  </p>
-                                  <p className="text-xs text-gray-600 mt-1">
-                                    {notification.message}
-                                  </p>
-                                  <p className="text-xs text-gray-400 mt-1">
-                                    {formatTimestamp(notification.timestamp || notification.created_at)}
-                                  </p>
-                                </div>
-                                {!notification.read && (
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
-                                )}
-                              </div>
-                            </div>
-                            <button
-                              onClick={(e) => handleRemoveNotification(notification.id, e)}
-                              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ml-2"
-                            >
-                              <XCircleIcon className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                          อ่านทั้งหมด
+                        </button>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
+
+                    {/* Notifications List */}
+                    <div className="overflow-y-auto max-h-[24rem] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                      {notifications.length === 0 ? (
+                        <div className="px-4 py-12 text-center">
+                          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <BellIcon className="w-8 h-8 text-gray-300" />
+                          </div>
+                          <p className="text-gray-500 font-medium text-sm">ไม่มีการแจ้งเตือนใหม่</p>
+                          <p className="text-gray-400 text-xs mt-1">เราจะแจ้งให้คุณทราบเมื่อมีการอัปเดต</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {notifications.map((notification) => (
+                            <motion.div
+                              key={notification.id}
+                              layout
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 20 }}
+                              onClick={() => handleNotificationClick(notification.id)}
+                              className={`px-5 py-4 hover:bg-orange-50/50 cursor-pointer transition-colors relative group ${
+                                !notification.read ? 'bg-orange-50/30' : ''
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className={`flex-shrink-0 mt-1 p-2 rounded-full ${
+                                    notification.type === 'success' ? 'bg-green-100 text-green-600' :
+                                    notification.type === 'error' ? 'bg-red-100 text-red-600' :
+                                    notification.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                                    'bg-blue-100 text-blue-600'
+                                }`}>
+                                  {getNotificationIcon(notification.type)}
+                                </div>
+                                
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1">
+                                      <p className={`text-sm font-semibold mb-1 ${
+                                        !notification.read ? 'text-gray-900' : 'text-gray-700'
+                                      }`}>
+                                        {notification.title}
+                                      </p>
+                                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
+                                        {notification.message}
+                                      </p>
+                                      <p className="text-[10px] text-gray-400 mt-2 font-medium flex items-center gap-1">
+                                        <span>{formatTimestamp(notification.timestamp || notification.created_at)}</span>
+                                      </p>
+                                    </div>
+                                    {!notification.read && (
+                                      <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0 mt-1.5 animate-pulse shadow-sm shadow-orange-500/50"></div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <button
+                                  onClick={(e) => handleRemoveNotification(notification.id, e)}
+                                  className="absolute top-2 right-2 p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
+                                >
+                                  <XCircleIcon className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+            </AnimatePresence>
           </div>
 
           {/* Shopping Cart Icon */}
           <button 
             onClick={() => router.push('/cart/CartPage')}
-            className="relative p-2 text-gray-600 hover:text-gray-800"
+            className="relative p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all duration-300 transform hover:scale-110 active:scale-95"
           >
             <ShoppingCartIcon className="w-6 h-6 sm:w-7 sm:h-7" />
             {/* Cart Badge */}

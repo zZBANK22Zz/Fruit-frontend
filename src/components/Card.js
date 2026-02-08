@@ -6,7 +6,7 @@ const Card = ({ image, name, price, farmDirect = true, productId, unit = 'kg', s
 
   const handleClick = () => {
     if (productId) {
-      router.push(`/products/SelectedPage?id=${productId}`);
+      router.push(`/products/${productId}`);
     }
   };
 

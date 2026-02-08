@@ -12,6 +12,7 @@ import {
 import Navbar from "../../components/Navbar";
 import { notifySuccess } from "../../utils/notificationUtils";
 import { compressImage, validateImageFile } from "../../utils/imageUtils";
+import OrangeSpinner from "../../components/OrangeSpinner";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function PaymentPage() {
         const token = localStorage.getItem('token');
 
         if (!apiUrl) {
-          setError('API configuration missing');
+          setError('ไม่พบการตั้งค่า API');
           setLoading(false);
           return;
         }
@@ -198,7 +199,7 @@ export default function PaymentPage() {
         <Navbar showBackButton={true} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <OrangeSpinner className="w-16 h-16 mx-auto mb-4" />
             <div className="text-gray-500">กำลังโหลด QR Code...</div>
           </div>
         </div>
@@ -308,7 +309,7 @@ export default function PaymentPage() {
                   </>
                 ) : (
                   <div className="w-64 h-64 flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+                    <OrangeSpinner className="h-10 w-10" />
                   </div>
                 )}
               </div>
@@ -433,12 +434,12 @@ export default function PaymentPage() {
           >
             {isConfirming ? (
               <>
-                <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                <OrangeSpinner className="w-6 h-6" />
                 <span>กำลังดำเนินการ...</span>
               </>
             ) : isUploading ? (
               <>
-                <div className="w-6 h-6 border-3 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+                <OrangeSpinner className="w-6 h-6" />
                 <span>กำลังโหลดสลิป...</span>
               </>
             ) : (

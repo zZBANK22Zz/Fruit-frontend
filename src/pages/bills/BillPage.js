@@ -10,6 +10,7 @@ import {
   TruckIcon
 } from "@heroicons/react/24/outline";
 import Navbar from "../../components/Navbar";
+import OrangeSpinner from "../../components/OrangeSpinner";
 import { fetchOrderById } from "../../utils/orderUtils";
 
 export default function BillPage() {
@@ -231,7 +232,7 @@ export default function BillPage() {
         <Navbar showBackButton={true} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <OrangeSpinner className="w-16 h-16 mx-auto mb-4" />
             <div className="text-gray-500">
               {isVerifying ? 'กำลังยืนยันตัวตน...' : 'กำลังโหลดใบเสร็จ...'}
             </div>

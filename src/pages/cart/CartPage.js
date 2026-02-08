@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeftIcon,
   TrashIcon,
-  HomeIcon
+  HomeIcon,
+  ShoppingBagIcon,
+  MinusIcon,
+  PlusIcon,
+  CheckBadgeIcon
 } from "@heroicons/react/24/outline";
 import { getCart, removeFromCart, updateCartItemQuantity, getCartTotal, clearCart } from "../../utils/cartUtils";
 import { notifySuccess } from "../../utils/notificationUtils";
@@ -61,26 +66,24 @@ export default function CartPage() {
       }
 
       if (!apiUrl) {
-        alert('API configuration missing');
+        alert('ไม่พบการตั้งค่า API');
         return;
       }
 
-      // Prepare order items - need to fetch fruit details to determine unit
-      // For now, send both weight and quantity - backend will determine which to use
+      // Prepare order items
       const items = cartItems.map(item => ({
         fruit_id: item.id,
         weight: item.quantity, // For fruits sold by kg
-        quantity: item.quantity // For fruits sold by piece (backend will use correct one)
+        quantity: item.quantity // For fruits sold by piece
       }));
 
-      // Create order using fetchWithAuth to handle token expiration
       const response = await fetchWithAuth(
         `${apiUrl}/api/orders`,
         {
           method: 'POST',
           body: JSON.stringify({
             items: items,
-            shipping_address: 'ที่อยู่จัดส่ง', // TODO: Get from user profile or form
+            shipping_address: 'ที่อยู่จัดส่ง', 
             shipping_city: 'Bangkok',
             shipping_postal_code: '10110',
             shipping_country: 'Thailand',
@@ -97,24 +100,19 @@ export default function CartPage() {
           const orderId = data.data.order.id;
           const totalAmount = data.data.order.total_amount || getCartTotal();
           
-          // Add success notification
           notifySuccess(
             'สั่งซื้อสำเร็จ',
-            `ออเดอร์ของคุณ #${orderId} ถูกสร้างเรียบร้อยแล้ว กรุณาชำระเงิน ${parseFloat(totalAmount).toFixed(2)} บาท`
+            `ออเดอร์ #${orderId} สร้างเรียบร้อยแล้ว`
           );
           
-          // Clear cart after successful order creation
           clearCart();
-          // Redirect to payment page with order ID
           router.push(`/payment/PaymentPage?orderId=${orderId}`);
         }
       } else {
-        // Handle other errors (not 401, as that's handled by fetchWithAuth)
         const errorData = await response.json();
         alert(errorData.message || 'เกิดข้อผิดพลาดในการสร้างออเดอร์');
       }
     } catch (error) {
-      // Token expiration is already handled by fetchWithAuth
       if (!error.message.includes('expired') && !error.message.includes('token')) {
         console.error('Error creating order:', error);
         alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
@@ -123,168 +121,209 @@ export default function CartPage() {
   };
 
   const totalAmount = getCartTotal();
+  const SHIPPING_COST = totalAmount > 500 ? 0 : 50; // Free shipping over 500
 
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-500">กำลังโหลด...</div>
+        <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-white flex flex-col">
-      {/* Top Navigation Bar */}
-      <div className="sticky top-0 bg-white/95 backdrop-blur-md z-10 px-4 py-4 flex items-center justify-between border-b border-gray-200 shadow-sm">
-        <button
-          onClick={() => router.back()}
-          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-orange-50 rounded-xl transition-all duration-300 transform hover:scale-110 active:scale-95"
-        >
-          <ArrowLeftIcon className="w-6 h-6" />
-        </button>
-        
-        <h1 className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
-          <span className="w-1 h-6 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></span>
-          ตะกร้าสินค้า
-        </h1>
-        
-        <button
-          onClick={() => router.push('/')}
-          className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all duration-300 transform hover:scale-110 active:scale-95"
-          title="หน้าแรก"
-        >
-          <HomeIcon className="w-6 h-6" />
-        </button>
+    <div className="min-h-screen bg-[#FAFAFA] font-sans text-gray-900 pb-32">
+      {/* Header */}
+      <div className="sticky top-0 bg-white/80 backdrop-blur-xl z-20 px-4 py-4 border-b border-gray-100 shadow-sm">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <button
+            onClick={() => router.back()}
+            className="p-2.5 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition-all active:scale-95 shadow-sm"
+          >
+            <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
+          </button>
+          
+          <h1 className="text-lg font-black text-gray-900">ตะกร้าของฉัน ({cartItems.length})</h1>
+          
+          <button
+            onClick={() => router.push('/')}
+            className="p-2.5 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition-all active:scale-95 shadow-sm"
+          >
+            <HomeIcon className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
       </div>
 
-      {/* Cart Items Section */}
-      <div className="flex-1 overflow-y-auto pb-32">
-        {cartItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full px-4 py-16">
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center mb-6 shadow-lg">
-              <svg
-                className="w-16 h-16 text-orange-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            </div>
-            <p className="text-gray-600 text-xl font-bold mb-2">ตะกร้าของคุณว่างเปล่า</p>
-            <p className="text-gray-500 text-sm mb-6">เริ่มเพิ่มสินค้าลงตะกร้ากันเลย!</p>
-            <button
-              onClick={() => router.push('/')}
-              className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        <AnimatePresence mode="popLayout">
+          {cartItems.length === 0 ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="flex flex-col items-center justify-center py-20 text-center"
             >
-              ไปช้อปปิ้ง
-            </button>
-          </div>
-        ) : (
-          <div className="px-4 py-6">
-            {cartItems.map((item, index) => (
-              <div
-                key={item.id}
-                className="bg-white border-2 border-gray-100 rounded-2xl p-4 mb-4 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="flex gap-4">
-                  {/* Product Image */}
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 shadow-sm">
-                    <img
-                      src={item.image 
-                        ? `data:image/jpeg;base64,${item.image}` 
-                        : '/images/example.jpg'}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = '/images/example.jpg';
-                      }}
-                    />
-                  </div>
-
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 mb-1 truncate">
-                      {item.name}
-                    </h3>
-                    <div className="flex items-baseline gap-2 mb-3">
-                      <p className="text-xl font-extrabold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-                        {item.price}
-                      </p>
-                      <span className="text-sm text-gray-500">บาท {item.unit === 'piece' ? 'ต่อลูก' : 'ต่อกิโลกรัม'}</span>
-                    </div>
-
-                    {/* Quantity Controls */}
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-1 border-2 border-gray-200">
-                        <button
-                          onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white hover:shadow-md transition-all duration-200 transform hover:scale-110 active:scale-95"
-                        >
-                          <span className="text-gray-700 font-bold">−</span>
-                        </button>
-                        
-                        <span className="text-base font-bold text-gray-900 min-w-[2rem] text-center">
-                          {item.unit === 'piece' ? parseInt(item.quantity) : parseFloat(item.quantity).toFixed(2)} {item.unit === 'piece' ? 'ลูก' : 'กก.'}
-                        </span>
-                        
-                        <button
-                          onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                          disabled={item.stock && item.quantity >= item.stock}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white hover:shadow-md transition-all duration-200 transform hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                          <span className="text-gray-700 font-bold">+</span>
-                        </button>
-                      </div>
-
-                      {/* Remove Button */}
-                      <button
-                        onClick={() => handleRemoveItem(item.id)}
-                        className="ml-auto p-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 transform hover:scale-110 active:scale-95"
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    {/* Subtotal */}
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-sm text-gray-600">
-                        รวม: <span className="font-bold text-lg bg-gradient-to-r from-orange-600 to-orange-700 bg-clip-text text-transparent">
-                          {(item.price * item.quantity).toFixed(2)} บาท
-                        </span>
-                      </p>
-                    </div>
-                  </div>
+              <div className="relative mb-8">
+                <div className="absolute inset-0 bg-orange-100 rounded-full blur-2xl opacity-50 animate-pulse"></div>
+                <div className="w-40 h-40 bg-gradient-to-br from-orange-50 to-white border-4 border-white shadow-2xl rounded-full flex items-center justify-center relative z-10">
+                  <ShoppingBagIcon className="w-20 h-20 text-orange-200" />
+                </div>
+                <div className="absolute -bottom-2 -right-2 bg-white p-3 rounded-full shadow-lg border border-gray-100 z-20 transform rotate-12">
+                   <span className="text-2xl">🍊</span>
                 </div>
               </div>
-            ))}
-          </div>
+              <h2 className="text-2xl font-black text-gray-900 mb-2">ตะกร้าว่างเปล่า</h2>
+              <p className="text-gray-500 mb-8 max-w-xs mx-auto">ยังไม่มีผลไม้ในตะกร้า ลองกลับไปเลือกซื้อผลไม้สดๆ จากสวนของเราดูไหมครับ?</p>
+              <button
+                onClick={() => router.push('/')}
+                className="px-8 py-4 bg-gray-900 text-white font-bold rounded-2xl shadow-lg shadow-gray-200 hover:bg-black hover:shadow-xl transition-all active:scale-95 flex items-center gap-2"
+              >
+                <span>ไปเลือกซื้อสินค้า</span>
+                <ArrowLeftIcon className="w-5 h-5 rotate-180" />
+              </button>
+            </motion.div>
+          ) : (
+            <div className="space-y-4">
+              {cartItems.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
+                  transition={{ delay: index * 0.05 }}
+                  className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 relative group overflow-hidden"
+                >
+                  <div className="flex gap-4">
+                    {/* Image */}
+                    <div 
+                      className="w-24 h-24 rounded-2xl bg-gray-50 flex-shrink-0 cursor-pointer overflow-hidden border border-gray-100"
+                      onClick={() => router.push(`/products/${item.id}`)}
+                    >
+                      <img
+                        src={item.image 
+                          ? `data:image/jpeg;base64,${item.image}` 
+                          : '/images/example.jpg'}
+                        alt={item.name}
+                        className="w-full h-full object-contain mix-blend-multiply p-2 transition-transform duration-500 group-hover:scale-110"
+                      />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 flex flex-col justify-between py-1">
+                      <div>
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 
+                            className="font-bold text-gray-900 text-lg leading-tight line-clamp-1 cursor-pointer hover:text-orange-600 transition-colors"
+                            onClick={() => router.push(`/products/${item.id}`)}
+                          >
+                            {item.name}
+                          </h3>
+                          <button
+                            onClick={() => handleRemoveItem(item.id)}
+                            className="absolute top-4 right-4 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <p className="text-xs font-medium text-gray-500 bg-gray-100 w-fit px-2 py-1 rounded-lg">
+                          ราคาต่อหน่วย: {item.price} บาท/{item.unit === 'piece' ? 'ลูก' : 'กก.'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-end justify-between mt-3">
+                        {/* Quantity Controls */}
+                        <div className="flex items-center bg-gray-50 rounded-xl p-1 shadow-inner">
+                          <button
+                            onClick={() => handleUpdateQuantity(item.id, item.quantity - (item.unit === 'piece' ? 1 : 0.5))}
+                            className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-600 hover:text-orange-600 transition-all active:scale-90 disabled:opacity-50"
+                          >
+                            <MinusIcon className="w-4 h-4 stroke-[3]" />
+                          </button>
+                          <div className="min-w-[3rem] text-center font-bold text-sm">
+                            {item.unit === 'piece' ? item.quantity : item.quantity.toFixed(1)} <span className="text-[10px] text-gray-400 font-normal">{item.unit === 'piece' ? 'ลูก' : 'กก.'}</span>
+                          </div>
+                          <button
+                            onClick={() => handleUpdateQuantity(item.id, item.quantity + (item.unit === 'piece' ? 1 : 0.5))}
+                            className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-600 hover:text-green-600 transition-all active:scale-90"
+                          >
+                            <PlusIcon className="w-4 h-4 stroke-[3]" />
+                          </button>
+                        </div>
+
+                        {/* Price */}
+                        <div className="text-right">
+                          <p className="text-lg font-black text-gray-900">
+                            ฿{(item.price * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Order Summary Block */}
+        {cartItems.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 bg-white rounded-3xl p-6 shadow-sm border border-gray-100"
+          >
+            <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <ShoppingBagIcon className="w-5 h-5 text-orange-500" />
+              สรุปคำสั่งซื้อ
+            </h3>
+            <div className="space-y-3 text-sm">
+               <div className="flex justify-between text-gray-600">
+                  <span>ยอดรวมสินค้า</span>
+                  <span className="font-bold">฿{totalAmount.toFixed(2)}</span>
+               </div>
+               <div className="flex justify-between text-gray-600">
+                  <span>ค่าจัดส่ง</span>
+                  {SHIPPING_COST === 0 ? (
+                    <span className="font-bold text-green-600">ฟรี</span>
+                  ) : (
+                    <span className="font-bold">฿{SHIPPING_COST.toFixed(2)}</span>
+                  )}
+               </div>
+               {totalAmount < 500 && (
+                 <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-50 px-3 py-2 rounded-xl">
+                    <CheckBadgeIcon className="w-4 h-4" />
+                    <span>ซื้อครบ 500 บาท จัดส่งฟรี! (ขาดอีก ฿{(500 - totalAmount).toFixed(2)})</span>
+                 </div>
+               )}
+               <div className="border-t border-dashed border-gray-200 pt-3 flex justify-between items-end">
+                  <span className="font-bold text-gray-900">ยอดชำระทั้งหมด</span>
+                  <span className="text-2xl font-black bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+                    ฿{(totalAmount + SHIPPING_COST).toFixed(2)}
+                  </span>
+               </div>
+            </div>
+          </motion.div>
         )}
       </div>
 
-      {/* Bottom Summary Bar */}
+      {/* Floating Checkout Bar */}
       {cartItems.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t-2 border-gray-200 shadow-2xl z-40">
-          <div className="px-4 py-5">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <span className="text-lg font-bold text-gray-700">ยอดรวมทั้งหมด</span>
-              <span className="text-3xl font-extrabold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-                {totalAmount.toFixed(2)} บาท
-              </span>
-            </div>
-            
-            <button
-              onClick={handleCheckout}
-              className="w-full bg-gradient-to-r from-orange-500 via-orange-500 to-orange-600 hover:from-orange-600 hover:via-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98]"
-            >
-              ดำเนินการสั่งซื้อ
-            </button>
+        <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-200 p-4 pb-8 z-30 shadow-2xl safe-area-bottom">
+          <div className="max-w-3xl mx-auto flex gap-4 items-center">
+             <div className="flex-1">
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">ยอดที่ต้องชำระ</p>
+                <p className="text-xl font-black text-gray-900">฿{(totalAmount + SHIPPING_COST).toFixed(2)}</p>
+             </div>
+             <button
+                onClick={handleCheckout}
+                className="flex-[2] bg-gray-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 group"
+             >
+                <span>ชำระเงิน</span>
+                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                   <ArrowLeftIcon className="w-3 h-3 rotate-180" />
+                </div>
+             </button>
           </div>
         </div>
       )}

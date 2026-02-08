@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { XMarkIcon, CameraIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import Button from './Button';
+import OrangeSpinner from './OrangeSpinner';
 
 export default function DeliveryConfirmationModal({ isOpen, onClose, onConfirm, order, isSubmitting }) {
   const [formData, setFormData] = useState({
@@ -208,7 +209,7 @@ export default function DeliveryConfirmationModal({ isOpen, onClose, onConfirm, 
             >
               {isSubmitting ? (
                 <div className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <OrangeSpinner className="w-5 h-5" />
                   <span>กำลังบันทึก...</span>
                 </div>
               ) : (

@@ -5,9 +5,11 @@ import {
   ArrowLeftIcon,
   DocumentTextIcon,
   CalendarIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  ShoppingBagIcon
 } from "@heroicons/react/24/outline";
 import Navbar from "../../components/Navbar";
+import OrangeSpinner from "../../components/OrangeSpinner";
 import { fetchUserOrders, fetchOrderById } from "../../utils/orderUtils";
 import { 
   XMarkIcon,
@@ -16,6 +18,7 @@ import {
   TruckIcon,
   DocumentArrowDownIcon
 } from "@heroicons/react/24/outline";
+import ImageModal from "../../components/ImageModal";
 
 export default function BillsListPage() {
   const router = useRouter();
@@ -28,6 +31,15 @@ export default function BillsListPage() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+
+  // Image Zoom State
+  const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
+  const [zoomedImageSrc, setZoomedImageSrc] = useState(null);
+
+  const handleImageClick = (src) => {
+    setZoomedImageSrc(src);
+    setIsImageZoomOpen(true);
+  };
 
   useEffect(() => {
     loadInvoices();
@@ -154,67 +166,78 @@ export default function BillsListPage() {
     }
   };
 
+  // Modern Pastel Fruit Colors
   const getStatusColor = (status) => {
     switch (status) {
-      case 'paid': return 'bg-blue-100 text-blue-700';
-      case 'received': return 'bg-purple-100 text-purple-700';
-      case 'preparing': return 'bg-yellow-100 text-yellow-700';
-      case 'completed': return 'bg-green-100 text-green-700';
-      case 'shipped': return 'bg-gray-100 text-gray-700';
-      case 'confirmed': return 'bg-blue-100 text-blue-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'paid': return 'bg-blue-50 text-blue-600 border border-blue-100';
+      case 'received': return 'bg-purple-50 text-purple-600 border border-purple-100';
+      case 'preparing': return 'bg-yellow-50 text-yellow-600 border border-yellow-100';
+      case 'completed': return 'bg-green-50 text-green-600 border border-green-100';
+      case 'shipped': return 'bg-orange-50 text-orange-600 border border-orange-100';
+      case 'confirmed': return 'bg-blue-50 text-blue-600 border border-blue-100';
+      default: return 'bg-gray-50 text-gray-500 border border-gray-100';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-white">
         <Navbar showBackButton={true} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
-            <div className="text-gray-500">กำลังโหลด...</div>
-          </div>
+        <div className="max-w-3xl mx-auto px-6 py-12 space-y-6 animate-pulse">
+            <div className="h-8 w-48 bg-gray-100 rounded-lg mb-8"></div>
+            {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-32 bg-gray-50 rounded-[2rem]"></div>
+            ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Top Navigation Bar */}
+    <div className="min-h-screen bg-[#F8F5F2] font-sans text-gray-900 pb-20 relative overflow-hidden selection:bg-orange-100 selection:text-orange-900">
       <Navbar showBackButton={true} />
+      
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 -ml-20 -mt-20 w-80 h-80 bg-orange-200/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute top-40 right-0 -mr-20 w-96 h-96 bg-yellow-200/20 rounded-full blur-3xl pointer-events-none"></div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto pb-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 relative z-10">
+        
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">ใบเสร็จของฉัน</h1>
-          <p className="text-gray-600 text-sm">ประวัติการชำระเงินทั้งหมด</p>
+        <div className="flex items-center gap-4 mb-8 sm:mb-10 px-2">
+            <div className="p-3 bg-white rounded-2xl shadow-sm shadow-orange-100">
+                <DocumentTextIcon className="w-8 h-8 text-orange-500" />
+            </div>
+            <div>
+                <h1 className="text-3xl font-black text-gray-900 tracking-tight">บิลของฉัน</h1>
+                <p className="text-gray-500 font-medium text-sm">ประวัติการสั่งซื้อความอร่อยทั้งหมด</p>
+            </div>
         </div>
 
-        {/* Invoices List */}
-        <div className="px-4 sm:px-6 py-6">
+        {/* Content */}
+        <div>
           {error ? (
-            <div className="text-center py-12">
-              <p className="text-red-500 text-lg mb-4">{error}</p>
+            <div className="text-center py-20 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 mx-2">
+              <p className="text-red-500 font-bold mb-4">{error}</p>
               <button
                 onClick={loadInvoices}
-                className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                className="px-8 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all hover:-translate-y-1 shadow-lg"
               >
                 ลองอีกครั้ง
               </button>
             </div>
           ) : invoices.length === 0 ? (
-            <div className="text-center py-12">
-              <DocumentTextIcon className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-2">ยังไม่มีใบเสร็จ</p>
-              <p className="text-gray-400 text-sm mb-6">เมื่อคุณทำการสั่งซื้อและชำระเงิน ใบเสร็จจะแสดงที่นี่</p>
+            <div className="text-center py-20 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 mx-2 flex flex-col items-center">
+              <div className="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center mb-6">
+                <ShoppingBagIcon className="w-10 h-10 text-orange-300" />
+              </div>
+              <p className="text-2xl font-black text-gray-900 mb-2">ยังไม่มีใบเสร็จ</p>
+              <p className="text-gray-400 font-medium mb-8">เริ่มช้อปผลไม้สดๆ กันเถอะ!</p>
               <button
                 onClick={() => router.push('/')}
-                className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                className="px-8 py-3 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-all hover:shadow-orange-200 hover:shadow-lg hover:-translate-y-1"
               >
-                ไปช้อปปิ้ง
+                ไปช้อปปิ้งเลย
               </button>
             </div>
           ) : (
@@ -223,39 +246,51 @@ export default function BillsListPage() {
                 <div
                   key={invoice.id}
                   onClick={() => handleOrderClick(invoice.id)}
-                  className="bg-white rounded-xl shadow-md border border-gray-200 p-5 hover:shadow-lg transition-all cursor-pointer"
+                  className="group bg-white rounded-[2rem] p-6 shadow-sm shadow-gray-100 hover:shadow-xl hover:shadow-orange-100/50 border border-gray-100 hover:border-orange-200 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative overflow-hidden"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <DocumentTextIcon className="w-5 h-5 text-orange-500" />
-                        <h3 className="font-semibold text-gray-900">{invoice.invoice_number}</h3>
-                      </div>
-                      {invoice.order_number && (
-                        <p className="text-sm text-gray-600 mb-1">
-                          ออเดอร์: {invoice.order_number}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    
+                    {/* Left: Info */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className="text-4xl">🧾</span>
+                            <div>
+                                <h3 className="text-lg font-black text-gray-900 group-hover:text-orange-600 transition-colors">
+                                    {invoice.invoice_number}
+                                </h3>
+                                <p className="text-xs text-gray-400 font-bold tracking-wide uppercase">
+                                    ORDER #{invoice.order_number}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-4 mt-4 text-sm font-medium text-gray-500">
+                             <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg">
+                                <CalendarIcon className="w-4 h-4" />
+                                <span>{formatDate(invoice.payment_date || invoice.created_at)}</span>
+                             </div>
+                             <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg">
+                                <CurrencyDollarIcon className="w-4 h-4" />
+                                <span>{invoice.payment_method || 'QR PromptPay'}</span>
+                             </div>
+                        </div>
+                    </div>
+
+                    {/* Right: Status & Amount */}
+                    <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 border-gray-100 pt-4 sm:pt-0 mt-2 sm:mt-0">
+                        <span className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wide ${getStatusColor(invoice.order_status || invoice.status)}`}>
+                            {getStatusLabel(invoice.order_status || invoice.status)}
+                        </span>
+                        <p className="text-2xl font-black text-gray-900">
+                            {formatCurrency(invoice.total_amount)} <span className="text-sm text-gray-400 font-medium">THB</span>
                         </p>
-                      )}
                     </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-orange-600 mb-1">
-                        {formatCurrency(invoice.total_amount)} บาท
-                      </p>
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.order_status || invoice.status)}`}>
-                        {getStatusLabel(invoice.order_status || invoice.status)}
-                      </span>
-                    </div>
+
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>{formatDate(invoice.payment_date || invoice.created_at)}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <CurrencyDollarIcon className="w-4 h-4" />
-                      <span>{invoice.payment_method || 'Thai QR PromptPay'}</span>
-                    </div>
+                  {/* Decorative Arrow */}
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 text-orange-400 hidden sm:block">
+                      <ArrowLeftIcon className="w-6 h-6 rotate-180" />
                   </div>
                 </div>
               ))}
@@ -264,210 +299,177 @@ export default function BillsListPage() {
         </div>
       </div>
 
-      {/* Order Detail Modal */}
+      {/* Modern Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 relative">
+            
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="bg-white px-8 py-6 border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">รายละเอียดคำสั่งซื้อ</h2>
-                {selectedOrder && (
-                  <div className="flex items-center gap-3">
-                    <p className="text-sm text-gray-500">{selectedOrder.order_number}</p>
-                    <button
-                      onClick={handleDownloadPDF}
-                      disabled={downloadLoading}
-                      className={`flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors ${downloadLoading ? 'opacity-50' : ''}`}
-                    >
-                      <DocumentArrowDownIcon className={`w-4 h-4 ${downloadLoading ? 'animate-bounce' : ''}`} />
-                      {downloadLoading ? 'กำลังโหลด...' : 'ดาวน์โหลด PDF'}
-                    </button>
-                  </div>
-                )}
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight">ใบเสร็จรับเงิน</h2>
+                <p className="text-sm text-gray-500 font-medium">รายละเอียดธุรกรรมของคุณ</p>
               </div>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-500"
               >
-                <XMarkIcon className="w-6 h-6 text-gray-400" />
+                <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-[#FAFAFA]">
               {isDetailLoading ? (
-                <div className="py-12 flex flex-col items-center justify-center">
-                  <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mb-3"></div>
-                  <p className="text-gray-500 text-sm">กำลังโหลดข้อมูล...</p>
+                <div className="py-20 flex flex-col items-center justify-center">
+                  <OrangeSpinner className="w-12 h-12 mb-4" />
+                  <p className="text-gray-400 font-medium animate-pulse">กำลังแกะกล่องข้อมูล...</p>
                 </div>
               ) : selectedOrder ? (
-                <div className="space-y-6">
-                  {/* Status & Date */}
-                  <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
-                    <div>
-                      <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">สถานะ</p>
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(selectedOrder.status)}`}>
-                        {getStatusLabel(selectedOrder.status)}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">วันที่ชำระเงิน</p>
-                      <p className="text-sm font-bold text-gray-900">{formatDate(selectedOrder.payment_date || selectedOrder.created_at)}</p>
-                    </div>
+                <div className="space-y-8 max-w-xl mx-auto">
+                  
+                  {/* Status Card */}
+                  <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                     <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${getStatusColor(selectedOrder.status).replace('text-', 'bg-').split(' ')[0]} ${getStatusColor(selectedOrder.status).includes('blue') ? 'text-blue-500' : 'text-white'}`}>
+                            <CheckBadgeIcon className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">สถานะการสั่งซื้อ</p>
+                            <p className="text-lg font-black text-gray-900">{getStatusLabel(selectedOrder.status)}</p>
+                        </div>
+                     </div>
+                     {selectedOrder && (
+                        <button
+                          onClick={handleDownloadPDF}
+                          disabled={downloadLoading}
+                          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${downloadLoading ? 'bg-gray-100 text-gray-400' : 'bg-black text-white hover:bg-gray-800 hover:-translate-y-1 shadow-lg'}`}
+                        >
+                          <DocumentArrowDownIcon className={`w-4 h-4 ${downloadLoading ? 'animate-bounce' : ''}`} />
+                          {downloadLoading ? 'กำลังโหลด...' : 'ดาวน์โหลด PDF'}
+                        </button>
+                     )}
                   </div>
 
                   {/* Items List */}
                   <div>
-                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-3 flex items-center gap-2">
-                       <DocumentTextIcon className="w-4 h-4 text-orange-500" />
-                       รายการสินค้า
-                    </h3>
+                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 pl-2">รายการสินค้า</h3>
                     <div className="space-y-3">
                       {selectedOrder.items?.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                          {item.fruit_image && (
-                            <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 border border-gray-200">
-                              <img 
+                        <div key={idx} className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-orange-200 transition-colors">
+                          {item.fruit_image ? (
+                            <img 
                                 src={`data:image/jpeg;base64,${item.fruit_image}`} 
                                 alt={item.fruit_name} 
-                                className="w-full h-full object-cover"
+                                className="w-14 h-14 object-cover rounded-xl bg-gray-50"
                               />
-                            </div>
+                          ) : (
+                              <div className="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center text-2xl">🍎</div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-gray-900 truncate">{item.fruit_name}</p>
-                            <p className="text-xs text-gray-500">
-                              {parseFloat(item.quantity).toFixed(2)} กก. × {parseFloat(item.price).toFixed(2)} บาท
+                            <p className="text-base font-bold text-gray-900 truncate">{item.fruit_name}</p>
+                            <p className="text-sm text-gray-500 font-medium">
+                              {parseFloat(item.quantity).toFixed(1)} กก. × {parseFloat(item.price).toFixed(2)}
                             </p>
                           </div>
-                          <p className="text-sm font-black text-orange-600">
-                            {parseFloat(item.subtotal).toFixed(2)} บาท
+                          <p className="text-base font-black text-gray-900">
+                            {parseFloat(item.subtotal).toFixed(2)}
                           </p>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Delivery Confirmation (Proof of Delivery) */}
+                  {/* Delivery Info */}
                   {selectedOrder.delivery_confirmation && (
-                    <div className="bg-orange-50 rounded-2xl p-6 border-2 border-orange-100 shadow-sm overflow-hidden">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center shadow-md shadow-orange-200">
-                          <TruckIcon className="w-5 h-5 text-white" />
+                    <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-[2rem] p-6 border border-orange-100">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2 bg-white rounded-xl shadow-sm">
+                                <TruckIcon className="w-5 h-5 text-orange-500" />
+                            </div>
+                            <h3 className="text-lg font-black text-gray-900">ข้อมูลการจัดส่ง</h3>
                         </div>
-                        <h3 className="text-lg font-black text-gray-900 tracking-tight">หลักฐานการจัดส่งสินค้า</h3>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Delivery Image */}
-                        {selectedOrder.delivery_confirmation.delivery_image && (
-                          <div className="relative group rounded-2xl overflow-hidden shadow-md border-2 border-white aspect-video md:aspect-square">
-                            <img 
-                              src={`data:image/jpeg;base64,${selectedOrder.delivery_confirmation.delivery_image}`} 
-                              alt="Delivery Proof" 
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          </div>
-                        )}
-                        
-                        {/* Delivery Details */}
-                        <div className="space-y-4 flex flex-col justify-center">
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">ข้อมูลการจัดส่งสำเร็จ</p>
-                            <div className="flex items-center gap-2 text-gray-900 font-bold">
-                              <span>{formatDate(selectedOrder.delivery_confirmation.delivery_date)}</span>
-                              <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                              <span>เวลา {selectedOrder.delivery_confirmation.delivery_time?.slice(0, 5)} น.</span>
-                            </div>
-                          </div>
 
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ชื่อผู้จัดส่ง</p>
-                              <p className="text-sm text-gray-900 font-bold">{selectedOrder.delivery_confirmation.sender_name}</p>
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {selectedOrder.delivery_confirmation.delivery_image && (
+                              <div className="rounded-2xl overflow-hidden border-4 border-white shadow-sm rotate-1 hover:rotate-0 transition-transform duration-500">
+                                <img 
+                                  src={`data:image/jpeg;base64,${selectedOrder.delivery_confirmation.delivery_image}`} 
+                                  alt="Proof" 
+                                  className="w-full h-full object-cover aspect-square cursor-zoom-in hover:brightness-95 transition-all"
+                                  onClick={() => handleImageClick(`data:image/jpeg;base64,${selectedOrder.delivery_confirmation.delivery_image}`)}
+                                />
+                              </div>
+                            )}
+                            <div className="space-y-4 flex flex-col justify-center">
+                                <div>
+                                    <p className="text-xs font-bold text-orange-400 uppercase">จัดส่งเมื่อ</p>
+                                    <p className="text-gray-900 font-bold">{formatDate(selectedOrder.delivery_confirmation.delivery_date)} เวลา {selectedOrder.delivery_confirmation.delivery_time?.slice(0, 5)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-orange-400 uppercase">ผู้รับ</p>
+                                    <p className="text-gray-900 font-bold">{selectedOrder.delivery_confirmation.receiver_name}</p>
+                                </div>
+                                <div className="pt-2 border-t border-orange-200">
+                                    <p className="text-xs text-gray-600 leading-relaxed max-h-20 overflow-y-auto">{selectedOrder.delivery_confirmation.receiver_address}</p>
+                                </div>
                             </div>
-                            <div className="space-y-1">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ชื่อผู้รับ</p>
-                              <p className="text-sm text-gray-900 font-bold">{selectedOrder.delivery_confirmation.receiver_name}</p>
-                            </div>
-                          </div>
-
-                          <div className="space-y-1 pt-2 border-t border-orange-200/50">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ที่อยู่รับสินค้า</p>
-                            <p className="text-xs text-gray-700 leading-relaxed italic">{selectedOrder.delivery_confirmation.receiver_address}</p>
-                          </div>
-                        </div>
-                      </div>
+                         </div>
                     </div>
                   )}
 
-                  {/* Progress Line Divider */}
-                  <div className="border-t-2 border-dashed border-gray-100"></div>
+                  {/* Summary & Slip */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                     <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">สรุปยอด</h3>
+                        <div className="space-y-3">
+                             <div className="flex justify-between text-gray-500 font-medium">
+                                <span>ยอดรวม</span>
+                                <span>{parseFloat(selectedOrder.total_amount).toFixed(2)}</span>
+                             </div>
+                             <div className="flex justify-between text-xl font-black text-gray-900 pt-4 border-t border-gray-50">
+                                <span>รวมทั้งสิ้น</span>
+                                <span className="text-orange-500">{parseFloat(selectedOrder.total_amount).toFixed(2)}</span>
+                             </div>
+                        </div>
+                     </div>
 
-                  {/* Payment Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                        <CurrencyDollarIcon className="w-4 h-4 text-orange-500" />
-                        สรุปยอดเงิน
-                      </h3>
-                      <div className="space-y-2 bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm">
-                        <div className="flex justify-between text-gray-600">
-                          <span>ยอดรวม</span>
-                          <span>{parseFloat(selectedOrder.total_amount).toFixed(2)} บาท</span>
-                        </div>
-                        <div className="flex justify-between text-gray-900 font-black text-base pt-2 border-t border-gray-200">
-                          <span>ยอดรวมทั้งสิ้น</span>
-                          <span className="text-orange-600">{parseFloat(selectedOrder.total_amount).toFixed(2)} บาท</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Payment Proof (Slip) */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                        <PhotoIcon className="w-4 h-4 text-orange-500" />
-                        หลักฐานการโอน
-                      </h3>
-                      {selectedOrder.payment_slip ? (
-                        <div className="relative group aspect-[3/4] rounded-xl overflow-hidden border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center">
-                          <img 
-                            src={`data:image/jpeg;base64,${selectedOrder.payment_slip.image_data}`} 
-                            alt="Payment Slip" 
-                            className="w-full h-full object-contain"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                            <span className="bg-white/90 text-gray-900 text-[10px] font-black px-3 py-1 rounded-full shadow-lg">คลิกเพื่อดูรูปขยาย</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="aspect-[3/4] rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
-                          <PhotoIcon className="w-10 h-10 text-gray-300 mb-2" />
-                          <p className="text-xs text-gray-400 font-medium">ไม่มีรูปหลักฐานการโอน</p>
-                        </div>
-                      )}
-                    </div>
+                     <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">หลักฐานโอนเงิน</h3>
+                        {selectedOrder.payment_slip ? (
+                            <div className="rounded-xl overflow-hidden bg-gray-50 border border-gray-100 cursor-pointer hover:opacity-90 transition-opacity">
+                                <img 
+                                    src={`data:image/jpeg;base64,${selectedOrder.payment_slip.image_data}`} 
+                                    alt="Slip" 
+                                    className="w-full h-40 object-cover cursor-zoom-in hover:scale-110 transition-transform duration-500"
+                                    onClick={() => handleImageClick(`data:image/jpeg;base64,${selectedOrder.payment_slip.image_data}`)}
+                                />
+                            </div>
+                        ) : (
+                            <div className="h-40 rounded-xl bg-gray-50 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200">
+                                <PhotoIcon className="w-8 h-8 mb-2" />
+                                <span className="text-xs font-bold">ไม่มีสลิป</span>
+                            </div>
+                        )}
+                     </div>
                   </div>
+
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500 italic">ไม่พบข้อมูล</div>
+                <div className="text-center py-12 text-gray-500">ไม่พบข้อมูล</div>
               )}
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-6 border-t border-gray-100 bg-gray-50/50">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors shadow-lg"
-              >
-                ปิดหน้าต่าง
-              </button>
-            </div>
           </div>
         </div>
       )}
+
+      <ImageModal 
+        isOpen={isImageZoomOpen}
+        onClose={() => setIsImageZoomOpen(false)}
+        imageSrc={zoomedImageSrc}
+        alt="Proof Zoom"
+      />
     </div>
   );
 }
-

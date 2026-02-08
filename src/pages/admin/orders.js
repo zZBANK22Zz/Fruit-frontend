@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import liff from "@line/liff";
 import Navbar from "../../components/Navbar";
 import Button from "../../components/Button";
+import OrangeSpinner from "../../components/OrangeSpinner";
 import { fetchAllOrders, updateOrderStatus, uploadDeliveryConfirmation, fetchOrderById } from "../../utils/orderUtils";
 import { notifySuccess, notifyError } from "../../utils/notificationUtils";
 import DeliveryConfirmationModal from "../../components/DeliveryConfirmationModal";
@@ -17,6 +18,7 @@ import {
   DocumentArrowDownIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
+import ImageModal from "../../components/ImageModal";
 
 export default function AdminOrdersPage() {
   const router = useRouter();
@@ -34,6 +36,10 @@ export default function AdminOrdersPage() {
   const [selectedOrderForSlip, setSelectedOrderForSlip] = useState(null);
   const [isSlipLoading, setIsSlipLoading] = useState(false);
   const [downloadLoading, setDownloadLoading] = useState(false);
+
+  // Image Zoom State
+  const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
+  const [zoomedImageSrc, setZoomedImageSrc] = useState(null);
 
   const statuses = [
     { value: 'paid', label: 'ชำระเงินแล้ว', color: 'bg-blue-100 text-blue-700' },
@@ -218,7 +224,7 @@ export default function AdminOrdersPage() {
         <Navbar showBackButton={true} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <OrangeSpinner className="w-16 h-16 mx-auto mb-4" />
             <div className="text-gray-500">กำลังโหลดข้อมูลออเดอร์...</div>
           </div>
         </div>
@@ -483,7 +489,7 @@ export default function AdminOrdersPage() {
             <div className="flex-1 overflow-y-auto p-6">
               {isSlipLoading ? (
                 <div className="py-20 flex flex-col items-center justify-center">
-                  <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                  <OrangeSpinner className="w-12 h-12 mb-4" />
                   <p className="text-gray-500 font-bold italic">กำลังโหลดหลักฐาน...</p>
                 </div>
               ) : selectedOrderForSlip ? (
@@ -491,10 +497,14 @@ export default function AdminOrdersPage() {
                   {/* Slip Image */}
                   {selectedOrderForSlip.payment_slip ? (
                     <div className="relative rounded-2xl overflow-hidden border-4 border-gray-50 bg-gray-50 shadow-inner group">
-                      <img 
+                      <img
                         src={`data:image/jpeg;base64,${selectedOrderForSlip.payment_slip.image_data}`} 
                         alt="Payment Slip" 
-                        className="w-full h-auto object-contain max-h-[500px]"
+                        className="w-full h-auto object-contain max-h-[500px] cursor-zoom-in hover:brightness-95 transition-all"
+                        onClick={() => {
+                            setZoomedImageSrc(`data:image/jpeg;base64,${selectedOrderForSlip.payment_slip.image_data}`);
+                            setIsImageZoomOpen(true);
+                        }}
                       />
                       <div className="absolute top-4 right-4">
                         <button
@@ -555,6 +565,12 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
+      <ImageModal 
+        isOpen={isImageZoomOpen}
+        onClose={() => setIsImageZoomOpen(false)}
+        imageSrc={zoomedImageSrc}
+        alt="Payment Slip Zoom"
+      />
     </div>
   );
 }
