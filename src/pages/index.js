@@ -131,16 +131,16 @@ export default function Home() {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
         if (!apiUrl) {
-          setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สัปรด", "แก้วมังกร"]);
+          setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]);
           setCategoriesLoading(false); return;
         }
         const response = await fetch(`${apiUrl}/api/categories`);
         if (response.ok) {
           const data = await response.json();
           if (data.data?.categories) setCategories(["ทั้งหมด", ...data.data.categories.map(c => c.name)]);
-          else setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สัปรด", "แก้วมังกร"]);
-        } else setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สัปรด", "แก้วมังกร"]);
-      } catch (e) { setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สัปรด", "แก้วมังกร"]); }
+          else setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]);
+        } else setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]);
+      } catch (e) { setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]); }
       finally { setCategoriesLoading(false); }
     };
     loadCategories();
@@ -168,28 +168,47 @@ export default function Home() {
     loadProducts();
 
     // Popular Fruits
+    // Popular Fruits (Global Best Sellers)
     const loadPopular = async () => {
       try {
         setPopularFruitsLoading(true);
         const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
-        const token = localStorage.getItem('token');
-        if (!apiUrl || !token) { setPopularFruits(defaultPopularFruits); setIsShowingUserProducts(false); return; }
-        const res = await fetch(`${apiUrl}/api/orders/most-bought?limit=4`, {
-           headers: { 'Authorization': `Bearer ${token}` }
-        });
+        
+        if (!apiUrl) { 
+            setPopularFruits(defaultPopularFruits); 
+            return; 
+        }
+
+        // Now public endpoint, no token needed
+        const res = await fetch(`${apiUrl}/api/orders/most-bought?limit=5`);
+
         if (res.ok) {
             const data = await res.json();
-            if (data.data?.products?.length) {
+            if (data.data?.products?.length > 0) {
                 setPopularFruits(data.data.products.map(p => ({
-                    id: p.id, name: p.name, price: p.price,
+                    id: p.id, 
+                    name: p.name, 
+                    price: p.price,
                     image: p.image ? `data:image/jpeg;base64,${p.image}` : '/images/example.jpg',
-                    farmDirect: true, stock: p.stock
+                    farmDirect: true, 
+                    unit: p.unit || 'kg',
+                    stock: p.stock
                 })));
+                // Always show for everyone now
                 setIsShowingUserProducts(true);
-            } else setPopularFruits(defaultPopularFruits);
-        } else setPopularFruits(defaultPopularFruits);
-      } catch (e) { setPopularFruits(defaultPopularFruits); }
-      finally { setPopularFruitsLoading(false); }
+            } else {
+                setPopularFruits(defaultPopularFruits);
+            }
+        } else {
+            console.error("Failed to fetch popular products:", res.status);
+            setPopularFruits(defaultPopularFruits);
+        }
+      } catch (e) { 
+        console.error("Error fetching popular products:", e);
+        setPopularFruits(defaultPopularFruits); 
+      } finally { 
+        setPopularFruitsLoading(false); 
+      }
     };
     loadPopular();
   }, []);

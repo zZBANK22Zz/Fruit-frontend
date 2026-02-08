@@ -150,7 +150,7 @@ export const getCategoryIcon = (categoryName) => {
   if (norm.includes('แตงโม')) return <WatermelonIcon />;
   if (norm.includes('ส้ม')) return <OrangeIcon />;
   if (norm.includes('มะละกอ')) return <PapayaIcon />;
-  if (norm.includes('สัปรด') || norm.includes('สับปะรด')) return <PineappleIcon />;
+  if (norm.includes('สับปะรด')) return <PineappleIcon />;
   if (norm.includes('แก้วมังกร')) return <DragonFruitIcon />;
   if (norm.includes('ลิ้นจี่')) return <LycheeIcon />;
   if (norm.includes('มะม่วง')) return <MangoIcon />;
