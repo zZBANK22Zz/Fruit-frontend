@@ -204,7 +204,7 @@ const LoginPage = () => {
                             />
                         </div>
                         <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">
-                            ยินดีต้อนรับกลับมา!
+                            ยินดีต้อนรับ
                         </h1>
                         <p className="text-gray-500 font-medium">
                             เข้าสู่ระบบเพื่อเข้าถึงสวนผลไม้สดของคุณ
