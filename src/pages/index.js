@@ -257,18 +257,27 @@ export default function Home() {
         {/* Playful Marquee */}
         <div className="relative overflow-hidden bg-orange-50/50 rounded-2xl py-3 border border-orange-100">
             <motion.div 
-                className="flex whitespace-nowrap gap-8 text-orange-800 font-medium text-sm sm:text-base"
-                animate={{ x: [0, -1000] }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="flex whitespace-nowrap text-orange-800 font-medium text-sm sm:text-base"
+                animate={{ x: "-50%" }}
+                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
             >
                 {[...Array(10)].map((_, i) => (
-                    <span key={i} className="flex items-center gap-4">
+                    <span key={i} className="flex items-center gap-4 mr-8">
                         <Sparkles className="w-4 h-4 text-orange-400" />
-                        ผลไม้เกรดพรีเมียม ส่งตรงจากสวน
+                        🍎 ผลไม้เกรดพรีเมียม ส่งตรงจากสวน 🚜
                         <span className="text-orange-300">•</span>
-                        รับประกันความสดใหม่
+                        ✨ รับประกันความสดใหม่ 🌿
                         <span className="text-orange-300">•</span>
-                        จัดส่งทั่วประเทศ
+                        🚚 จัดส่งทั่วประเทศ 🇹🇭
+                        <span className="text-orange-300">•</span>
+                        <a 
+                            href="https://lin.ee/vRVh8xp" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="bg-[#06C755] text-white px-3 py-1 rounded-full text-xs font-bold hover:bg-[#05b34c] transition-colors shadow-sm cursor-pointer no-underline flex items-center gap-1"
+                        >
+                            💬 Add Line เลย! ✨
+                        </a>
                     </span>
                 ))}
             </motion.div>
