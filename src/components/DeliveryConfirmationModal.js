@@ -1,37 +1,43 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { XMarkIcon, CameraIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import Button from './Button';
 import OrangeSpinner from './OrangeSpinner';
 
 export default function DeliveryConfirmationModal({ isOpen, onClose, onConfirm, order, isSubmitting }) {
-  const getReceiverName = () => {
-    if (order?.first_name || order?.last_name) {
-      return `${order.first_name || ''} ${order.last_name || ''}`.trim();
-    }
-    return order?.username || '';
-  };
-
-  const getReceiverAddress = () => {
-    if (order?.address_line) {
-      return [order.address_line, order.sub_district, order.district, order.province, order.postal_code]
-        .filter(Boolean).join(', ');
-    }
-    return order?.shipping_address || '';
-  };
-
   const [formData, setFormData] = useState({
     delivery_image: '',
     delivery_date: new Date().toISOString().split('T')[0],
     delivery_time: new Date().toTimeString().slice(0, 5),
     sender_name: '',
-    receiver_name: getReceiverName(),
-    receiver_phone: order?.phone_number || order?.phone || '',
-    receiver_address: getReceiverAddress()
+    receiver_name: '',
+    receiver_phone: '',
+    receiver_address: ''
   });
-  
+
   const [preview, setPreview] = useState(null);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+
+  // Re-populate receiver info whenever the order prop changes
+  useEffect(() => {
+    if (!order) return;
+
+    const receiverName = (order.first_name || order.last_name)
+      ? `${order.first_name || ''} ${order.last_name || ''}`.trim()
+      : (order.username || '');
+
+    const receiverAddress = order.address_line
+      ? [order.address_line, order.sub_district, order.district, order.province, order.postal_code]
+          .filter(Boolean).join(', ')
+      : (order.shipping_address || '');
+
+    setFormData(prev => ({
+      ...prev,
+      receiver_name: receiverName,
+      receiver_phone: order.phone_number || order.phone || '',
+      receiver_address: receiverAddress
+    }));
+  }, [order]);
 
   if (!isOpen) return null;
 
