@@ -83,7 +83,7 @@ const Modal = ({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-25" />
+          <div className="fixed inset-0 bg-white/20 backdrop-blur-sm" />
         </Transition.Child>
 
         {/* Modal Container */}

@@ -8,8 +8,11 @@ import {
   ShoppingBagIcon,
   MinusIcon,
   PlusIcon,
-  CheckBadgeIcon
+  CheckBadgeIcon,
+  MapPinIcon
 } from "@heroicons/react/24/outline";
+import AddressForm from "../../components/AddressForm";
+
 import { getCart, removeFromCart, updateCartItemQuantity, getCartTotal, clearCart } from "../../utils/cartUtils";
 import { notifySuccess } from "../../utils/notificationUtils";
 import { handleTokenExpiration, fetchWithAuth } from "../../utils/authUtils";
@@ -18,15 +21,126 @@ export default function CartPage() {
   const router = useRouter();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [isCalculatingFee, setIsCalculatingFee] = useState(false);
 
   useEffect(() => {
     loadCart();
   }, []);
 
+  useEffect(() => {
+    loadCart();
+    loadAddresses();
+  }, []);
+
+  // Fetch Delivery Fee when address or cart changes
+  useEffect(() => {
+    if (selectedAddressId && cartItems.length > 0) {
+      calculateDeliveryFee();
+    } else {
+      setDeliveryFee(0);
+    }
+  }, [selectedAddressId, cartItems]);
+
+  const calculateDeliveryFee = async () => {
+    try {
+      setIsCalculatingFee(true);
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+      
+      if (!apiUrl || !token) return;
+
+      // Prepare items for weight calculation
+      const items = cartItems.map(item => ({
+        fruit_id: item.id,
+        weight: item.quantity, 
+        quantity: item.quantity 
+      }));
+
+      const response = await fetch(`${apiUrl}/api/delivery/calculate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          address_id: selectedAddressId,
+          items: items
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setDeliveryFee(data.data.delivery_fee);
+        }
+      }
+    } catch (error) {
+      console.error('Error calculating delivery fee:', error);
+    } finally {
+      setIsCalculatingFee(false);
+    }
+  };
+
   const loadCart = () => {
     const cart = getCart();
     setCartItems(cart);
     setLoading(false);
+  };
+
+  const loadAddresses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return; // User not logged in, will handle at checkout
+      
+      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+      const response = await fetchWithAuth(`${apiUrl}/api/addresses`, {}, router.push);
+      
+      if (response && response.ok) {
+        const data = await response.json();
+        if (data.data && data.data.addresses) {
+          setAddresses(data.data.addresses);
+          // Auto-select first address if any
+          if (data.data.addresses.length > 0) {
+            setSelectedAddressId(data.data.addresses[0].id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading addresses:', error);
+    }
+  };
+
+
+
+  const handleAddressSave = async (newAddressData) => {
+      try {
+        const token = localStorage.getItem('token');
+        const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+        
+        const response = await fetchWithAuth(
+            `${apiUrl}/api/addresses`,
+            {
+                method: 'POST',
+                body: JSON.stringify(newAddressData)
+            },
+            router.push
+        );
+        
+        if (response && response.ok) {
+            await loadAddresses(); // Reload list
+            setShowAddressForm(false);
+            notifySuccess('เพิ่มที่อยู่สำเร็จ');
+        } else {
+             alert('เพิ่มที่อยู่ไม่สำเร็จ');
+        }
+      } catch (error) {
+          console.error('Error saving address:', error);
+          alert('เกิดข้อผิดพลาด');
+      }
   };
 
   const handleRemoveItem = (productId) => {
@@ -70,6 +184,18 @@ export default function CartPage() {
         return;
       }
 
+      if (!selectedAddressId) {
+        alert('กรุณาเลือกที่อยู่จัดส่ง');
+        return;
+      }
+
+      // Find selected address details to send as fallback text (optional)
+      const selectedAddr = addresses.find(a => a.id === selectedAddressId);
+      const addressString = selectedAddr 
+        ? `${selectedAddr.address_line}, ${selectedAddr.sub_district}, ${selectedAddr.district}, ${selectedAddr.province} ${selectedAddr.postal_code}`
+        : 'ที่อยู่จัดส่ง';
+
+
       // Prepare order items
       const items = cartItems.map(item => ({
         fruit_id: item.id,
@@ -83,9 +209,10 @@ export default function CartPage() {
           method: 'POST',
           body: JSON.stringify({
             items: items,
-            shipping_address: 'ที่อยู่จัดส่ง', 
-            shipping_city: 'Bangkok',
-            shipping_postal_code: '10110',
+            address_id: selectedAddressId, // Send ID for backend fee calculation
+            shipping_address: addressString, 
+            shipping_city: selectedAddr ? selectedAddr.province : 'Bangkok',
+            shipping_postal_code: selectedAddr ? selectedAddr.postal_code : '10110',
             shipping_country: 'Thailand',
             payment_method: 'Thai QR PromptPay',
             notes: null
@@ -121,7 +248,8 @@ export default function CartPage() {
   };
 
   const totalAmount = getCartTotal();
-  const SHIPPING_COST = totalAmount > 500 ? 0 : 50; // Free shipping over 500
+  // Using dynamic delivery fee from state instead of static logic
+  const SHIPPING_COST = deliveryFee;
 
   if (loading) {
     return (
@@ -265,6 +393,75 @@ export default function CartPage() {
             </div>
           )}
         </AnimatePresence>
+
+        {/* Address Selection Section */}
+        {cartItems.length > 0 && (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-8 bg-white rounded-3xl p-6 shadow-sm border border-gray-100"
+            >
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                        <MapPinIcon className="w-5 h-5 text-orange-500" />
+                        ที่อยู่จัดส่ง
+                    </h3>
+                    <button 
+                        onClick={() => setShowAddressForm(true)}
+                        className="text-sm text-orange-600 font-medium hover:underline flex items-center gap-1"
+                    >
+                        <PlusIcon className="w-4 h-4" />
+                        เพิ่มที่อยู่ใหม่
+                    </button>
+                </div>
+                
+                {addresses.length === 0 ? (
+                    <div className="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                        <p className="text-gray-500 mb-3">คุณยังไม่มีที่อยู่จัดส่ง</p>
+                        <button 
+                            onClick={() => setShowAddressForm(true)}
+                            className="bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:border-orange-500 hover:text-orange-500 transition-colors"
+                        >
+                            เพิ่มที่อยู่จัดส่ง
+                        </button>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {addresses.map(addr => (
+                            <div 
+                                key={addr.id}
+                                onClick={() => setSelectedAddressId(addr.id)}
+                                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                                    selectedAddressId === addr.id 
+                                    ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500' 
+                                    : 'border-gray-200 hover:border-orange-300'
+                                }`}
+                            >
+                                <div className="flex justify-between items-start">
+                                    <p className="font-medium text-gray-900 text-sm">
+                                        {addr.address_line}
+                                    </p>
+                                    {selectedAddressId === addr.id && (
+                                        <CheckBadgeIcon className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {addr.sub_district}, {addr.district}, {addr.province} {addr.postal_code}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </motion.div>
+        )}
+        
+        {/* Address Form Modal */}
+        <AddressForm 
+            isOpen={showAddressForm}
+            onClose={() => setShowAddressForm(false)}
+            onSave={handleAddressSave}
+        />
+
 
         {/* Order Summary Block */}
         {cartItems.length > 0 && (

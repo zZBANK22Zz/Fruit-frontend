@@ -8,11 +8,15 @@ import {
   PhoneIcon,
   ShieldCheckIcon,
   CheckCircleIcon,
-  XMarkIcon
+  XMarkIcon,
+  MapPinIcon,
+  PlusIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
 import Navbar from "../../components/Navbar";
 import Button from "../../components/Button";
 import Modal from "../../components/Modal";
+import AddressForm from "../../components/AddressForm";
 import { compressImage, validateImageFile } from "../../utils/imageUtils";
 import { notifySuccess } from "../../utils/notificationUtils";
 import { handleTokenExpiration } from "../../utils/authUtils";
@@ -36,8 +40,106 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState('');
   const [isLineUser, setIsLineUser] = useState(false);
 
+  // Phone number state (managed independently)
+  const [phoneInput, setPhoneInput] = useState('');
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
+  
+  // Address State
+  const [addresses, setAddresses] = useState([]);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [addressToDelete, setAddressToDelete] = useState(null);
+
+  const loadAddresses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+      if (!token || !apiUrl) return;
+
+      const response = await fetch(`${apiUrl}/api/addresses`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAddresses(data.data.addresses || []);
+      }
+    } catch (error) {
+      console.error('Error loading addresses:', error);
+    }
+  };
+
+  const handleSaveAddress = async (formData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+      const url = editingAddress 
+        ? `${apiUrl}/api/addresses/${editingAddress.id}`
+        : `${apiUrl}/api/addresses`;
+      const method = editingAddress ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        notifySuccess(
+          editingAddress ? 'แก้ไขที่อยู่สำเร็จ' : 'เพิ่มที่อยู่สำเร็จ',
+          editingAddress ? 'ข้อมูลที่อยู่ของคุณได้รับการแก้ไขแล้ว' : 'เพิ่มที่อยู่ใหม่เรียบร้อยแล้ว'
+        );
+        setIsAddressModalOpen(false);
+        setEditingAddress(null);
+        loadAddresses();
+      } else {
+        const data = await response.json();
+        setError(data.message || 'เกิดข้อผิดพลาดในการบันทึกที่อยู่');
+      }
+    } catch (error) {
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      console.error('Error saving address:', error);
+    }
+  };
+
+  const handleDeleteAddress = async () => {
+    if (!addressToDelete) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+      
+      const response = await fetch(`${apiUrl}/api/addresses/${addressToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        notifySuccess('ลบที่อยู่สำเร็จ', 'ข้อมูลที่อยู่ของคุณถูกลบเรียบร้อยแล้ว');
+        setAddressToDelete(null);
+        loadAddresses();
+      } else {
+        const data = await response.json();
+        setError(data.message || 'เกิดข้อผิดพลาดในการลบที่อยู่');
+      }
+    } catch (error) {
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      console.error('Error deleting address:', error);
+    }
+  };
+
   useEffect(() => {
     loadUserProfile();
+    loadAddresses();
   }, []);
 
   const loadUserProfile = async () => {
@@ -100,6 +202,7 @@ export default function ProfilePage() {
         password: '',
         image: initialUserData.image || null
       });
+      setPhoneInput(initialUserData.phone_number || '');
       setImagePreview(initialUserData.image ? `data:image/jpeg;base64,${initialUserData.image}` : null);
 
     } catch (error) {
@@ -135,8 +238,9 @@ export default function ProfilePage() {
         first_name: userData.first_name || '',
         last_name: userData.last_name || '',
         password: '',
-        image: userData.image || null // Reset to current user image
+        image: userData.image || null
       });
+      setPhoneInput(userData.phone_number || '');
       setImagePreview(userData.image ? `data:image/jpeg;base64,${userData.image}` : null);
     }
   };
@@ -185,6 +289,60 @@ export default function ProfilePage() {
       image: null
     }));
     setImagePreview(null);
+  };
+
+  // Save phone number independently
+  const handleSavePhone = async () => {
+    setIsSavingPhone(true);
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+      const response = await fetch(`${apiUrl}/api/users/${userData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ username: userData.username, email: userData.email, phone_number: phoneInput || null })
+      });
+      const data = await response.json();
+      if (response.ok && data.data?.user) {
+        setUserData(prev => ({ ...prev, phone_number: data.data.user.phone_number }));
+        localStorage.setItem('user', JSON.stringify({ ...userData, phone_number: data.data.user.phone_number }));
+        notifySuccess('บันทึกเบอร์โทรสำเร็จ', 'เบอร์โทรศัพท์ของคุณได้รับการอัปเดตแล้ว');
+        setIsEditingPhone(false);
+      } else {
+        setError(data.message || 'เกิดข้อผิดพลาด');
+      }
+    } catch (err) {
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    } finally {
+      setIsSavingPhone(false);
+    }
+  };
+
+  const handleDeletePhone = async () => {
+    setIsSavingPhone(true);
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+      const response = await fetch(`${apiUrl}/api/users/${userData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ username: userData.username, email: userData.email, phone_number: null })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setUserData(prev => ({ ...prev, phone_number: null }));
+        setPhoneInput('');
+        localStorage.setItem('user', JSON.stringify({ ...userData, phone_number: null }));
+        notifySuccess('ลบเบอร์โทรสำเร็จ', 'เบอร์โทรศัพท์ของคุณถูกลบแล้ว');
+        setIsEditingPhone(false);
+      } else {
+        setError(data.message || 'เกิดข้อผิดพลาด');
+      }
+    } catch (err) {
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    } finally {
+      setIsSavingPhone(false);
+    }
   };
 
   const handleSave = async () => {
@@ -238,6 +396,14 @@ export default function ProfilePage() {
       const newLastName = formData.last_name || '';
       if (newLastName !== currentLastName) {
         updateData.last_name = formData.last_name || null;
+        hasChanges = true;
+      }
+
+      // Check if phone_number changed
+      const currentPhone = userData.phone_number || '';
+      const newPhone = formData.phone_number || '';
+      if (newPhone !== currentPhone) {
+        updateData.phone_number = formData.phone_number || null;
         hasChanges = true;
       }
       
@@ -549,6 +715,62 @@ export default function ProfilePage() {
                         )}
                     </div>
 
+                    <div className="group">
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                <PhoneIcon className="w-3 h-3" /> เบอร์โทรศัพท์
+                            </label>
+                            {!isEditingPhone && (
+                              <div className="flex gap-2">
+                                {userData.phone_number ? (
+                                  <>
+                                    <button
+                                      onClick={() => { setPhoneInput(userData.phone_number || ''); setIsEditingPhone(true); }}
+                                      className="text-xs px-2.5 py-1 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 font-semibold transition-colors"
+                                    >แก้ไข</button>
+                                    <button
+                                      onClick={handleDeletePhone}
+                                      disabled={isSavingPhone}
+                                      className="text-xs px-2.5 py-1 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 font-semibold transition-colors"
+                                    >ลบ</button>
+                                  </>
+                                ) : (
+                                  <button
+                                    onClick={() => setIsEditingPhone(true)}
+                                    className="text-xs px-2.5 py-1 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 font-semibold transition-colors"
+                                  >+ เพิ่มเบอร์โทร</button>
+                                )}
+                              </div>
+                            )}
+                        </div>
+                        {isEditingPhone ? (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="tel"
+                                    value={phoneInput}
+                                    onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                    placeholder="เช่น 0812345678"
+                                    autoFocus
+                                    maxLength={10}
+                                    className="flex-1 border-0 border-b-2 border-orange-300 bg-transparent py-2 px-0 text-gray-900 font-medium placeholder:text-gray-300 focus:border-orange-500 focus:ring-0 transition-colors text-base outline-none"
+                                />
+                                <button
+                                    onClick={handleSavePhone}
+                                    disabled={isSavingPhone}
+                                    className="text-xs px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 font-semibold transition-colors disabled:opacity-50"
+                                >{ isSavingPhone ? '...' : 'บันทึก' }</button>
+                                <button
+                                    onClick={() => { setIsEditingPhone(false); setPhoneInput(userData.phone_number || ''); }}
+                                    className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 font-semibold transition-colors"
+                                >ยกเลิก</button>
+                            </div>
+                        ) : (
+                            <div className="text-lg font-medium text-gray-900">
+                                {userData.phone_number || <span className="text-gray-400 text-base">ยังไม่ได้เพิ่มเบอร์โทร</span>}
+                            </div>
+                        )}
+                    </div>
+
                     {isEditing && (
                         <div className="group pt-4">
                              <label className="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -565,6 +787,74 @@ export default function ProfilePage() {
                             />
                         </div>
                     )}
+                </div>
+            </div>
+
+            <div className="border-t border-gray-100"></div>
+
+            {/* Section: Addresses */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-12">
+                <div className="md:col-span-4">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="p-2 bg-green-100 text-green-600 rounded-lg">
+                            <MapPinIcon className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">
+                            {userData.role === 'admin' ? 'ที่อยู่ของร้าน' : 'ที่อยู่จัดส่ง'}
+                        </h3>
+                    </div>
+                    <p className="text-sm text-gray-500 pl-11">
+                        {userData.role === 'admin' ? 'จัดการที่ตั้งร้านค้าของคุณ' : 'จัดการที่อยู่สำหรับการจัดส่งสินค้า'}
+                    </p>
+                </div>
+                <div className="md:col-span-8 space-y-4">
+                    {addresses.length > 0 ? (
+                        addresses.map((addr) => (
+                            <div key={addr.id} className="p-4 rounded-xl border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all group relative bg-white">
+                                <div className="pr-16">
+                                    <p className="font-bold text-gray-900 text-lg mb-1">{addr.address_line}</p>
+                                    <p className="text-gray-600 text-sm">
+                                        {addr.sub_district}, {addr.district}, {addr.province} {addr.postal_code}
+                                    </p>
+                                </div>
+                                <div className="absolute top-4 right-4 flex gap-2">
+                                    <button 
+                                        onClick={() => {
+                                            setEditingAddress(addr);
+                                            setIsAddressModalOpen(true);
+                                        }}
+                                        className="p-2 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-colors"
+                                        title="แก้ไข"
+                                    >
+                                        <PencilIcon className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                        onClick={() => setAddressToDelete(addr)}
+                                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                        title="ลบ"
+                                    >
+                                        <TrashIcon className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                            <p className="text-gray-500 mb-2">ยังไม่มีที่อยู่จัดส่ง</p>
+                            <p className="text-xs text-gray-400">เพิ่มที่อยู่เพื่อความรวดเร็วในการสั่งซื้อ</p>
+                        </div>
+                    )}
+                    
+                    <button 
+                        onClick={() => {
+                            setEditingAddress(null);
+                            setIsAddressModalOpen(true);
+                        }}
+                        className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
+                    >
+                        <PlusIcon className="w-5 h-5" />
+                        เพิ่มที่อยู่ใหม่
+                    </button>
                 </div>
             </div>
 
@@ -590,6 +880,29 @@ export default function ProfilePage() {
         message={success}
         buttonText="ตกลง"
       />
+
+      {/* Address Form Modal */}
+      <AddressForm
+        isOpen={isAddressModalOpen}
+        onClose={() => {
+            setIsAddressModalOpen(false);
+            setEditingAddress(null);
+        }}
+        onSave={handleSaveAddress}
+        initialData={editingAddress}
+      />
+
+      {/* Delete Address Confirmation */}
+        <Modal
+            isOpen={!!addressToDelete}
+            onClose={() => setAddressToDelete(null)}
+            type="warning"
+            title="ลบที่อยู่"
+            message={`คุณต้องการลบที่อยู่ "${addressToDelete?.address_line}" ใช่หรือไม่?`}
+            buttonText="ลบข้อมูล"
+            onConfirm={handleDeleteAddress}
+            showCloseButton={true}
+        />
     </div>
   );
 }

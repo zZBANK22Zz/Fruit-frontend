@@ -4,14 +4,29 @@ import Button from './Button';
 import OrangeSpinner from './OrangeSpinner';
 
 export default function DeliveryConfirmationModal({ isOpen, onClose, onConfirm, order, isSubmitting }) {
+  const getReceiverName = () => {
+    if (order?.first_name || order?.last_name) {
+      return `${order.first_name || ''} ${order.last_name || ''}`.trim();
+    }
+    return order?.username || '';
+  };
+
+  const getReceiverAddress = () => {
+    if (order?.address_line) {
+      return [order.address_line, order.sub_district, order.district, order.province, order.postal_code]
+        .filter(Boolean).join(', ');
+    }
+    return order?.shipping_address || '';
+  };
+
   const [formData, setFormData] = useState({
     delivery_image: '',
     delivery_date: new Date().toISOString().split('T')[0],
     delivery_time: new Date().toTimeString().slice(0, 5),
     sender_name: '',
-    receiver_name: order?.username || '',
-    receiver_phone: order?.phone || '',
-    receiver_address: order?.shipping_address || ''
+    receiver_name: getReceiverName(),
+    receiver_phone: order?.phone_number || order?.phone || '',
+    receiver_address: getReceiverAddress()
   });
   
   const [preview, setPreview] = useState(null);
@@ -164,32 +179,25 @@ export default function DeliveryConfirmationModal({ isOpen, onClose, onConfirm, 
                 />
               </div>
 
-              <div className="space-y-4 pt-2">
-                <h3 className="text-xs font-black text-blue-500 uppercase tracking-widest px-1">ข้อมูลผู้รับ</h3>
-                <input
-                  type="text"
-                  placeholder="ชื่อผู้รับ"
-                  required
-                  value={formData.receiver_name}
-                  onChange={(e) => setFormData({...formData, receiver_name: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-50 rounded-xl focus:outline-none focus:border-orange-400 focus:bg-white font-bold transition-all text-sm"
-                />
-                <input
-                  type="text"
-                  placeholder="เบอร์โทรศัพท์ผู้รับ"
-                  required
-                  value={formData.receiver_phone}
-                  onChange={(e) => setFormData({...formData, receiver_phone: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-50 rounded-xl focus:outline-none focus:border-orange-400 focus:bg-white font-bold transition-all text-sm"
-                />
-                <textarea
-                  placeholder="ที่อยู่จัดส่ง"
-                  required
-                  rows="3"
-                  value={formData.receiver_address}
-                  onChange={(e) => setFormData({...formData, receiver_address: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-50 rounded-xl focus:outline-none focus:border-orange-400 focus:bg-white font-bold transition-all text-sm resize-none"
-                ></textarea>
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-xs font-black text-blue-500 uppercase tracking-widest">ข้อมูลผู้รับ</h3>
+                  {/* <span className="text-[10px] text-gray-400 font-bold bg-gray-100 px-2 py-0.5 rounded-full">จากโปรไฟล์ลูกค้า</span> */}
+                </div>
+                <div className="bg-blue-50/60 border-2 border-blue-100 rounded-xl p-4 space-y-3">
+                  <div>
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">ชื่อผู้รับ</p>
+                    <p className="font-bold text-gray-900 text-sm">{formData.receiver_name || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">เบอร์โทรศัพท์</p>
+                    <p className="font-bold text-gray-900 text-sm">{formData.receiver_phone || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-0.5">ที่อยู่จัดส่ง</p>
+                    <p className="font-bold text-gray-900 text-sm leading-relaxed">{formData.receiver_address || '—'}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -268,7 +268,7 @@ export default function Home() {
                         <span className="text-orange-300">•</span>
                         ✨ รับประกันความสดใหม่ 🌿
                         <span className="text-orange-300">•</span>
-                        🚚 จัดส่งทั่วประเทศ 🇹🇭
+                        🚚 จัดส่งทั่วภูเก็ต 🇹🇭
                         <span className="text-orange-300">•</span>
                         <a 
                             href="https://lin.ee/vRVh8xp" 
