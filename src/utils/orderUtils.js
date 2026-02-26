@@ -162,3 +162,34 @@ export const uploadDeliveryConfirmation = async (orderId, deliveryData) => {
   }
 };
 
+/**
+ * Dispatch an order using QR code method
+ * @param {string} orderId - ID of order to dispatch
+ * @returns {Promise<Object>} Response data containing qr_url and order
+ */
+export const dispatchOrderWithQR = async (orderId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
+    
+    if (!token || !apiUrl) throw new Error('Authentication required');
+
+    const response = await fetch(`${apiUrl}/api/orders/${orderId}/dispatch-qr`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || 'Failed to dispatch order with QR');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error dispatching order with QR:', error);
+    throw error;
+  }
+};

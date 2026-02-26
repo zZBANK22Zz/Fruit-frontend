@@ -5,7 +5,7 @@ import liff from "@line/liff";
 import Navbar from "../../components/Navbar";
 import Button from "../../components/Button";
 import OrangeSpinner from "../../components/OrangeSpinner";
-import { fetchAllOrders, updateOrderStatus, uploadDeliveryConfirmation, fetchOrderById } from "../../utils/orderUtils";
+import { fetchAllOrders, updateOrderStatus, uploadDeliveryConfirmation, fetchOrderById, dispatchOrderWithQR } from "../../utils/orderUtils";
 import { notifySuccess, notifyError } from "../../utils/notificationUtils";
 import DeliveryConfirmationModal from "../../components/DeliveryConfirmationModal";
 import { 
@@ -17,9 +17,11 @@ import {
   ChevronRightIcon,
   PhotoIcon,
   DocumentArrowDownIcon,
-  XMarkIcon
+  XMarkIcon,
+  QrCodeIcon
 } from "@heroicons/react/24/outline";
 import ImageModal from "../../components/ImageModal";
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function AdminOrdersPage() {
   const router = useRouter();
@@ -42,6 +44,11 @@ export default function AdminOrdersPage() {
   // Image Zoom State
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [zoomedImageSrc, setZoomedImageSrc] = useState(null);
+
+  // QR Modal States
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [selectedOrderForQR, setSelectedOrderForQR] = useState(null);
 
   const statuses = [
     { value: 'paid', label: t('statusPaid') || 'ชำระเงินแล้ว', color: 'bg-blue-100 text-blue-700' },
@@ -106,6 +113,24 @@ export default function AdminOrdersPage() {
       return;
     }
 
+    if (newStatus === 'delivering') {
+      const order = orders.find(o => o.id === orderId);
+      setIsSubmitting(true);
+      try {
+        const res = await dispatchOrderWithQR(orderId);
+        setQrCodeUrl(res.data.qr_url);
+        setSelectedOrderForQR(order);
+        setIsQRModalOpen(true);
+        notifySuccess(t('qrGenerated') || 'สร้าง QR Code สำเร็จ', t('qrReadyForRider') || 'QR Code สำหรับ Rider พร้อมใช้งานแล้ว');
+        await loadOrders();
+      } catch (error) {
+        notifyError(t('qrFailed') || 'สร้าง QR Code ล้มเหลว', error.message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await updateOrderStatus(orderId, newStatus);
@@ -127,6 +152,26 @@ export default function AdminOrdersPage() {
       await loadOrders();
     } catch (error) {
       notifyError(t('errorOccurred') || 'เกิดข้อผิดพลาด', error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDispatchQRFromModal = async (orderId) => {
+    setIsDeliveryModalOpen(false);
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await dispatchOrderWithQR(orderId);
+      setQrCodeUrl(res.data.qr_url);
+      setSelectedOrderForQR(order);
+      setIsQRModalOpen(true);
+      notifySuccess(t('qrGenerated') || 'สร้าง QR Code สำเร็จ', t('qrReadyForRider') || 'QR Code สำหรับ Rider พร้อมใช้งานแล้ว');
+      await loadOrders();
+    } catch (error) {
+      notifyError(t('qrFailed') || 'สร้าง QR Code ล้มเหลว', error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -361,6 +406,19 @@ export default function AdminOrdersPage() {
                             >
                               <PhotoIcon className="w-5 h-5" />
                             </button>
+                            {(order.order_status === 'delivering' || order.status === 'delivering') && order.delivery_qr_code && (
+                              <button
+                                onClick={() => {
+                                  setQrCodeUrl(`${process.env.NEXT_PUBLIC_FRONTEND_URL || window.location.origin}/delivery-confirm/${order.delivery_qr_code}`);
+                                  setSelectedOrderForQR(order);
+                                  setIsQRModalOpen(true);
+                                }}
+                                className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors"
+                                title="ดู QR Code สำหรับ Rider"
+                              >
+                                <QrCodeIcon className="w-5 h-5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -422,6 +480,18 @@ export default function AdminOrdersPage() {
                         <PhotoIcon className="w-5 h-5" />
                         <span>{t('viewSlip') || 'ดูสลิป'}</span>
                       </button>
+                      {(order.order_status === 'delivering' || order.status === 'delivering') && order.delivery_qr_code && (
+                        <button
+                          onClick={() => {
+                            setQrCodeUrl(`${process.env.NEXT_PUBLIC_FRONTEND_URL || window.location.origin}/delivery-confirm/${order.delivery_qr_code}`);
+                            setSelectedOrderForQR(order);
+                            setIsQRModalOpen(true);
+                          }}
+                          className="flex-shrink-0 p-3 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors flex items-center gap-2 font-bold"
+                        >
+                          <QrCodeIcon className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -463,6 +533,7 @@ export default function AdminOrdersPage() {
         isOpen={isDeliveryModalOpen}
         onClose={() => setIsDeliveryModalOpen(false)}
         onConfirm={handleDeliveryConfirm}
+        onDispatchQR={handleDispatchQRFromModal}
         order={selectedOrderForDelivery}
         isSubmitting={isSubmitting}
       />
@@ -567,6 +638,48 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
+
+      {/* QR Code Modal for Rider Dispatch */}
+      {isQRModalOpen && selectedOrderForQR && qrCodeUrl && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-indigo-50/50">
+              <div>
+                <h3 className="text-xl font-black text-indigo-900">QR Code จัดส่งสินค้า</h3>
+                <p className="text-sm text-indigo-600 font-bold">#{selectedOrderForQR.order_number}</p>
+              </div>
+              <button 
+                onClick={() => setIsQRModalOpen(false)}
+                className="p-2 hover:bg-indigo-100 rounded-full transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6 text-indigo-400" />
+              </button>
+            </div>
+            <div className="p-8 flex flex-col items-center justify-center bg-white space-y-6">
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                <QRCodeSVG 
+                  value={qrCodeUrl} 
+                  size={200}
+                  level="H"
+                  includeMargin={false}
+                />
+              </div>
+              <p className="text-center text-gray-500 font-medium text-sm">
+                ให้ลูกค้าสแกน QR Code นี้เมื่อได้รับสินค้าเพื่อยืนยันการจัดส่ง
+              </p>
+              <button
+                onClick={() => {
+                  window.print();
+                }}
+                className="w-full py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-colors shadow-md active:scale-95"
+              >
+                พิมพ์ QR Code / บันทึกรูป
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ImageModal 
         isOpen={isImageZoomOpen}
         onClose={() => setIsImageZoomOpen(false)}

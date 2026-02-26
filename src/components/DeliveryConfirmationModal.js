@@ -3,7 +3,7 @@ import { XMarkIcon, CameraIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import Button from './Button';
 import OrangeSpinner from './OrangeSpinner';
 
-export default function DeliveryConfirmationModal({ isOpen, onClose, onConfirm, order, isSubmitting }) {
+export default function DeliveryConfirmationModal({ isOpen, onClose, onConfirm, onDispatchQR, order, isSubmitting }) {
   const [formData, setFormData] = useState({
     delivery_image: '',
     delivery_date: new Date().toISOString().split('T')[0],
@@ -208,28 +208,53 @@ export default function DeliveryConfirmationModal({ isOpen, onClose, onConfirm, 
             </div>
           </div>
 
-          <div className="mt-10 flex gap-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-6 py-4 rounded-2xl bg-gray-100 text-gray-500 font-black hover:bg-gray-200 transition-all active:scale-95"
-            >
-              ยกเลิก
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-[2] px-6 py-4 rounded-2xl bg-orange-500 text-white font-black shadow-lg shadow-orange-200 hover:bg-orange-600 hover:shadow-orange-300 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center justify-center gap-2">
-                  <OrangeSpinner className="w-5 h-5" />
-                  <span>กำลังบันทึก...</span>
-                </div>
-              ) : (
-                'ยืนยันจัดส่งสินค้า'
-              )}
-            </button>
+          <div className="mt-10 flex flex-col gap-3">
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-6 py-4 rounded-2xl bg-gray-100 text-gray-500 font-black hover:bg-gray-200 transition-all active:scale-95"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-[2] px-6 py-4 rounded-2xl bg-orange-500 text-white font-black shadow-lg shadow-orange-200 hover:bg-orange-600 hover:shadow-orange-300 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <OrangeSpinner className="w-5 h-5" />
+                    <span>กำลังบันทึก...</span>
+                  </div>
+                ) : (
+                  'ยืนยันจัดส่งสินค้า'
+                )}
+              </button>
+            </div>
+            
+            {onDispatchQR && (
+              <div className="relative flex items-center py-2">
+                <div className="flex-grow border-t border-gray-200"></div>
+                <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold uppercase">หรือ</span>
+                <div className="flex-grow border-t border-gray-200"></div>
+              </div>
+            )}
+            
+            {onDispatchQR && (
+              <button
+                type="button"
+                onClick={() => onDispatchQR(order.id)}
+                disabled={isSubmitting}
+                className="w-full px-6 py-4 rounded-2xl bg-indigo-50 text-indigo-600 font-black border-2 border-indigo-100 hover:bg-indigo-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+                </svg>
+                ส่งด้วย Rider (สแกน QR)
+              </button>
+            )}
           </div>
         </form>
       </div>
