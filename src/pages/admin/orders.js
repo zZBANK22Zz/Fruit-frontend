@@ -58,6 +58,33 @@ export default function AdminOrdersPage() {
     { value: 'shipped', label: t('statusShipped') || 'จัดส่งแล้ว', color: 'bg-gray-100 text-gray-700' }
   ];
 
+  // Poll for status changes while QR modal is open
+  useEffect(() => {
+    let intervalId;
+    if (isQRModalOpen && selectedOrderForQR) {
+      intervalId = setInterval(async () => {
+        try {
+          const updatedOrder = await fetchOrderById(selectedOrderForQR.id);
+          // If the status is no longer delivering (e.g. they scanned it and it became shipped)
+          if (updatedOrder && updatedOrder.status !== 'delivering' && updatedOrder.order_status !== 'delivering') {
+            setIsQRModalOpen(false);
+            notifySuccess(
+              'จัดส่งสำเร็จ!', 
+              `ออเดอร์ #${updatedOrder.order_number} ถูกสแกนรับสินค้าเรียบร้อยแล้ว`
+            );
+            loadOrders();
+          }
+        } catch (error) {
+          console.error("Failed to poll order status:", error);
+        }
+      }, 3000); // poll every 3 seconds
+    }
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isQRModalOpen, selectedOrderForQR]);
+
   useEffect(() => {
     checkAdminAccess();
     loadOrders();
