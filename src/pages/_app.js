@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import "@/styles/globals.css";
 import initLiff from "@/utils/liff";
+import { LanguageProvider } from "@/utils/LanguageContext";
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
@@ -13,7 +14,8 @@ export default function App({ Component, pageProps }) {
     // Public routes that don't require authentication
     const publicRoutes = [
       '/registration/LoginPage',
-      '/registration/RegisterPage'
+      '/registration/RegisterPage',
+      '/docs'
     ];
 
     const checkAuthentication = () => {
@@ -81,12 +83,16 @@ export default function App({ Component, pageProps }) {
   }
 
   // Only render component if authenticated or on public route
-  const publicRoutes = ['/registration/LoginPage', '/registration/RegisterPage'];
+  const publicRoutes = ['/registration/LoginPage', '/registration/RegisterPage', '/docs'];
   const isPublicRoute = publicRoutes.includes(router.pathname);
   
   if (!isAuthenticated && !isPublicRoute) {
     return null; // Don't render anything while redirecting
   }
 
-  return <Component {...pageProps} />;
+  return (
+    <LanguageProvider>
+      <Component {...pageProps} />
+    </LanguageProvider>
+  );
 }

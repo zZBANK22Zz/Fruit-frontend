@@ -15,9 +15,11 @@ import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { addToCart } from "../../utils/cartUtils";
 import Navbar from "../../components/Navbar";
 import OrangeSpinner from "../../components/OrangeSpinner";
+import { useLanguage } from "../../utils/LanguageContext";
 
 export default function SelectedPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { id } = router.query;
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,7 @@ export default function SelectedPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [isLiked, setIsLiked] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null); // สำหรับผลไม้ที่มีตัวเลือกการขาย เช่น กล้วย
 
   // Fetch product details
   useEffect(() => {
@@ -70,10 +73,25 @@ export default function SelectedPage() {
     loadProduct();
   }, [id]);
 
+  // เมื่อโหลดสินค้าที่มี selling_options ให้ set default option แรกโดยอัตโนมัติ
+  useEffect(() => {
+    if (product && product.selling_options && product.selling_options.length > 0) {
+      setSelectedOption(product.selling_options[0]);
+    } else {
+      setSelectedOption(null);
+    }
+  }, [product]);
+
   // Calculate total price
   useEffect(() => {
     const calculatePrice = async () => {
       if (!product) return;
+
+      // ถ้ามี selectedOption (กล้วย ฯลฯ) ใช้ราคาจาก option * quantity
+      if (selectedOption) {
+        setTotalPrice(selectedOption.price * quantity);
+        return;
+      }
 
       if (product.unit === 'piece') {
         setTotalPrice(product.price * quantity);
@@ -132,17 +150,26 @@ export default function SelectedPage() {
 
   const handleAddToCart = () => {
     if (product) {
-      const amount = product.unit === 'piece' ? quantity : weight;
-      addToCart(product, amount);
-      const unitLabel = product.unit === 'piece' ? 'ลูก' : 'กก.';
-      showToastMessage(`เพิ่ม ${product.name} ${amount} ${unitLabel} ลงตะกร้าแล้ว`);
+      if (selectedOption) {
+        addToCart(product, quantity, selectedOption);
+        showToastMessage(t('addedToCart', product.name, quantity, selectedOption.label));
+      } else {
+        const amount = product.unit === 'piece' ? quantity : weight;
+        addToCart(product, amount);
+        const unitLabel = product.unit === 'piece' ? t('perPiece') : t('perKg');
+        showToastMessage(t('addedToCart', product.name, amount, unitLabel));
+      }
     }
   };
 
   const handleBuyNow = () => {
     if (product) {
-      const amount = product.unit === 'piece' ? quantity : weight;
-      addToCart(product, amount);
+      if (selectedOption) {
+        addToCart(product, quantity, selectedOption);
+      } else {
+        const amount = product.unit === 'piece' ? quantity : weight;
+        addToCart(product, amount);
+      }
       router.push('/cart/CartPage');
     }
   };
@@ -160,7 +187,7 @@ export default function SelectedPage() {
               transition={{ delay: 0.5 }}
               className="text-gray-400 font-medium"
             >
-              กำลังคัดเลือกผลไม้สดๆ...
+              {t('loadingProduct')}
             </motion.div>
           </div>
         </div>
@@ -171,12 +198,12 @@ export default function SelectedPage() {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
-        <p className="text-red-500 text-lg mb-4 font-bold">{error || 'ไม่พบสินค้า'}</p>
+        <p className="text-red-500 text-lg mb-4 font-bold">{error || t('productNotFound')}</p>
         <button
           onClick={() => router.back()}
           className="px-6 py-3 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 transition-all font-bold shadow-lg shadow-orange-200"
         >
-          กลับหน้าหลัก
+          {t('backToHome')}
         </button>
       </div>
     );
@@ -184,7 +211,14 @@ export default function SelectedPage() {
 
   const maxQuantity = product.stock || 999;
   const isOutOfStock = product.stock === 0;
-  const currentTotal = totalPrice ?? (product.unit === 'piece' ? product.price * quantity : product.price * weight);
+  // ถ้ามี selectedOption ใช้ราคาจาก option ไม่งั้นใช้ตรรกะเดิม
+  const effectivePrice = selectedOption ? selectedOption.price : product.price;
+  const effectiveUnit = selectedOption ? selectedOption.unit : (product.unit || 'kg');
+  const currentTotal = totalPrice ?? (
+    selectedOption
+      ? selectedOption.price * quantity
+      : effectiveUnit === 'piece' ? effectivePrice * quantity : effectivePrice * weight
+  );
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans selection:bg-orange-100 selection:text-orange-900 pb-32">
@@ -267,10 +301,10 @@ export default function SelectedPage() {
                   {product.name}
                 </h1>
                 <div className="flex items-center gap-2 text-gray-500 font-medium">
-                  <span>รหัสสินค้า: {String(product.id || '').split('-')[0]}</span>
+                  <span>{t('productId')}: {String(product.id || '').split('-')[0]}</span>
                   {product.stock && (
                      <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${isOutOfStock ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                        {isOutOfStock ? 'สินค้าหมด' : 'มีสินค้า'}
+                        {isOutOfStock ? t('outOfStock') : t('inStock')}
                      </span>
                   )}
                 </div>
@@ -291,16 +325,50 @@ export default function SelectedPage() {
               <h3 className="sr-only">Product price</h3>
               <div className="flex items-baseline gap-2">
                 <span className="text-5xl font-black bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
-                  ฿{product.price}
+                  ฿{effectivePrice}
                 </span>
-                <span className="text-xl text-gray-400 font-medium">/ {product.unit === 'piece' ? 'ลูก' : 'กก.'}</span>
+                <span className="text-xl text-gray-400 font-medium">
+                  / {selectedOption ? selectedOption.label : (product.unit === 'piece' ? t('perPiece') : t('perKg'))}
+                </span>
               </div>
+              {product.estimated_weight_kg && (
+                <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 bg-orange-50 text-orange-600 rounded-full text-sm font-bold border border-orange-100">
+                  <span className="w-2 h-2 rounded-full bg-orange-400"></span>
+                  {t('estimatedWeight', product.estimated_weight_kg, product.unit === 'piece' ? t('perPiece') : t('perPiece'))}
+                </div>
+              )}
             </div>
 
+            {/* Selling Option Selector (สำหรับผลไม้ที่มีตัวเลือก เช่น กล้วย) */}
+            {product.selling_options && product.selling_options.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">{t('selectPurchaseType')}</h3>
+                <div className="flex gap-3 flex-wrap">
+                  {product.selling_options.map((option) => {
+                    const isSelected = selectedOption && selectedOption.unit === option.unit;
+                    return (
+                      <button
+                        key={option.unit}
+                        onClick={() => { setSelectedOption(option); setQuantity(1); }}
+                        className={`flex flex-col items-center px-5 py-3 rounded-2xl border-2 transition-all font-medium text-sm shadow-sm ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-50 text-orange-600 shadow-orange-100'
+                            : 'border-gray-200 bg-white text-gray-600 hover:border-orange-300 hover:bg-orange-50/40'
+                        }`}
+                      >
+                        <span className="text-base font-black">{option.label}</span>
+                        <span className="text-xs text-gray-400 mt-0.5">฿{option.price} / {option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="mt-8">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">รายละเอียด</h3>
+              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">{t('details')}</h3>
               <div className="prose prose-sm text-gray-600 leading-relaxed bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <p>{product.description || "ผลไม้สดเกรดพรีเมียม คัดพิเศษจากสวนที่ดีที่สุด เพื่อรสชาติที่ยอดเยี่ยมและคุณประโยชน์ครบถ้วน เหมาะสำหรับทุกคนในครอบครัว"}</p>
+                <p>{product.description || t('defaultDescription')}</p>
               </div>
             </div>
 
@@ -309,10 +377,12 @@ export default function SelectedPage() {
               <div className="mt-10 border-t border-gray-100 pt-8">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm font-bold text-gray-900">
-                    {product.unit === 'piece' ? 'จำนวนต้องการ (ลูก)' : 'น้ำหนักที่ต้องการ (กก.)'}
+                    {selectedOption
+                      ? t('desiredQuantity', selectedOption.label)
+                      : product.unit === 'piece' ? t('desiredQuantity', t('perPiece')) : t('desiredWeight')}
                   </span>
                   <span className="text-sm font-medium text-gray-500">
-                     มีสินค้า {product.unit === 'piece' ? parseInt(product.stock) : parseFloat(product.stock).toFixed(2)} {product.unit === 'piece' ? 'ลูก' : 'กก.'}
+                    {t('stockAvailable', product.unit === 'piece' || selectedOption ? parseInt(product.stock) : parseFloat(product.stock).toFixed(2), selectedOption ? selectedOption.label : (product.unit === 'piece' ? t('perPiece') : t('perKg')))}
                   </span>
                 </div>
 
@@ -320,23 +390,35 @@ export default function SelectedPage() {
                    {/* Quantity/Weight Selector */}
                    <div className="flex items-center bg-gray-100 rounded-2xl p-1.5 w-fit">
                       <button
-                        onClick={() => product.unit === 'piece' ? handleQuantityChange(quantity - 1) : handleWeightChange(parseFloat((weight - 0.5).toFixed(1)))}
+                        onClick={() => {
+                          if (selectedOption || product.unit === 'piece') {
+                            handleQuantityChange(quantity - 1);
+                          } else {
+                            handleWeightChange(parseFloat((weight - 0.5).toFixed(1)));
+                          }
+                        }}
                         className="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-gray-600 hover:text-orange-600 hover:shadow transition-all disabled:opacity-50 disabled:shadow-none"
-                        disabled={product.unit === 'piece' ? quantity <= 1 : weight <= 0.5}
+                        disabled={selectedOption || product.unit === 'piece' ? quantity <= 1 : weight <= 0.5}
                       >
                         <MinusIcon className="w-5 h-5" />
                       </button>
                       
                       <div className="w-20 text-center">
                         <span className="text-xl font-black text-gray-900">
-                           {product.unit === 'piece' ? quantity : weight}
+                           {selectedOption || product.unit === 'piece' ? quantity : weight}
                         </span>
                       </div>
 
                       <button
-                        onClick={() => product.unit === 'piece' ? handleQuantityChange(quantity + 1) : handleWeightChange(parseFloat((weight + 0.5).toFixed(1)))}
+                        onClick={() => {
+                          if (selectedOption || product.unit === 'piece') {
+                            handleQuantityChange(quantity + 1);
+                          } else {
+                            handleWeightChange(parseFloat((weight + 0.5).toFixed(1)));
+                          }
+                        }}
                         className="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-gray-600 hover:text-orange-600 hover:shadow transition-all disabled:opacity-50 disabled:shadow-none"
-                        disabled={product.unit === 'piece' ? quantity >= maxQuantity : weight >= maxQuantity}
+                        disabled={selectedOption || product.unit === 'piece' ? quantity >= maxQuantity : weight >= maxQuantity}
                       >
                         <PlusIcon className="w-5 h-5" />
                       </button>
@@ -367,7 +449,7 @@ export default function SelectedPage() {
                   className="flex-1 py-4 px-6 rounded-[1.5rem] bg-orange-50 text-orange-600 font-bold text-lg hover:bg-orange-100 transition-all border border-orange-100 active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                >
                   <ShoppingCartIcon className="w-6 h-6" />
-                  <span className="hidden sm:inline">ใส่ตะกร้า</span>
+                  <span className="hidden sm:inline">{t('addToCart')}</span>
                </button>
 
                <button
@@ -376,10 +458,10 @@ export default function SelectedPage() {
                   className={`flex-[2] py-4 px-6 rounded-[1.5rem] font-black text-lg text-white shadow-xl shadow-orange-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2 relative overflow-hidden group ${isOutOfStock ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'}`}
                >
                   {isOutOfStock ? (
-                      <span>สินค้าหมดชั่วคราว</span>
+                      <span>{t('temporarilyOutOfStock')}</span>
                   ) : (
                       <>
-                        <span>ซื้อเลย</span>
+                        <span>{t('buyNow')}</span>
                         <ArrowRightIcon className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                         {/* Shine Effect */}
                         <div className="absolute inset-0 -translate-x-full group-hover:animate-shine bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />

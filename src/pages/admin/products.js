@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useLanguage } from "../../utils/LanguageContext";
 import Navbar from "../../components/Navbar";
 import Button from "../../components/Button";
 import Modal from "../../components/Modal";
@@ -20,6 +21,7 @@ import {
 
 export default function AdminProductsPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
@@ -38,7 +40,10 @@ export default function AdminProductsPage() {
     price: "",
     stock: "",
     category_id: "",
-    image: null
+    image: null,
+    selling_options: [],
+    unitOption: "",
+    estimated_weight_kg: ""
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,7 +94,7 @@ export default function AdminProductsPage() {
         setUserData(user);
         
         if (user.role !== 'admin') {
-          notifyError('ไม่มีสิทธิ์เข้าถึง', 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
+          notifyError(t('noAccessTitle') || 'ไม่มีสิทธิ์เข้าถึง', t('noAccessMessage') || 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
           router.push('/');
           return;
         }
@@ -114,7 +119,7 @@ export default function AdminProductsPage() {
               localStorage.setItem('user', JSON.stringify(user));
               
               if (user.role !== 'admin') {
-                notifyError('ไม่มีสิทธิ์เข้าถึง', 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
+                notifyError(t('noAccessTitle') || 'ไม่มีสิทธิ์เข้าถึง', t('noAccessMessage') || 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
                 router.push('/');
                 return;
               }
@@ -178,7 +183,7 @@ export default function AdminProductsPage() {
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) {
-      setError('กรุณากรอกชื่อหมวดหมู่');
+      setError(t('enterCategoryName') || 'กรุณากรอกชื่อหมวดหมู่');
       return;
     }
 
@@ -190,7 +195,7 @@ export default function AdminProductsPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
 
       if (!token || !apiUrl) {
-        setError('ไม่พบข้อมูลการเข้าสู่ระบบ');
+        setError(t('loginDataNotFound') || 'ไม่พบข้อมูลการเข้าสู่ระบบ');
         setIsSubmitting(false);
         return;
       }
@@ -207,17 +212,17 @@ export default function AdminProductsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'ไม่สามารถสร้างหมวดหมู่ได้');
+        throw new Error(data.message || t('cannotCreateCategory') || 'ไม่สามารถสร้างหมวดหมู่ได้');
       }
 
-      setSuccess('สร้างหมวดหมู่สำเร็จ');
-      notifySuccess('สร้างหมวดหมู่สำเร็จ', `หมวดหมู่ "${newCategoryName}" ถูกสร้างเรียบร้อยแล้ว`);
+      setSuccess(t('createCategorySuccessTitle') || 'สร้างหมวดหมู่สำเร็จ');
+      notifySuccess(t('createCategorySuccessTitle') || 'สร้างหมวดหมู่สำเร็จ', t('createCategorySuccessMessage', newCategoryName) || `หมวดหมู่ "${newCategoryName}" ถูกสร้างเรียบร้อยแล้ว`);
       setNewCategoryName("");
       setShowCategoryModal(false);
       loadCategories(); // Reload categories
     } catch (err) {
-      setError(err.message || 'เกิดข้อผิดพลาดในการสร้างหมวดหมู่');
-      notifyError('สร้างหมวดหมู่ไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาดในการสร้างหมวดหมู่');
+      setError(err.message || t('errorCreatingCategory') || 'เกิดข้อผิดพลาดในการสร้างหมวดหมู่');
+      notifyError(t('createCategoryFailedTitle') || 'สร้างหมวดหมู่ไม่สำเร็จ', err.message || t('errorCreatingCategory') || 'เกิดข้อผิดพลาดในการสร้างหมวดหมู่');
     } finally {
       setIsSubmitting(false);
     }
@@ -247,7 +252,7 @@ export default function AdminProductsPage() {
         setError("");
       } catch (err) {
         console.error('Image compression error:', err);
-        setError('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ กรุณาลองอีกครั้ง');
+        setError(t('errorProcessingImage') || 'เกิดข้อผิดพลาดในการประมวลผลรูปภาพ กรุณาลองอีกครั้ง');
       } finally {
         setIsSubmitting(false);
       }
@@ -264,7 +269,7 @@ export default function AdminProductsPage() {
 
   const handleCreateProduct = async () => {
     if (!productForm.name || !productForm.price) {
-      setError('กรุณากรอกชื่อสินค้าและราคา');
+      setError(t('enterProductNameAndPrice') || 'กรุณากรอกชื่อสินค้าและราคา');
       return;
     }
 
@@ -276,7 +281,7 @@ export default function AdminProductsPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
 
       if (!token || !apiUrl) {
-        setError('ไม่พบข้อมูลการเข้าสู่ระบบ');
+        setError(t('loginDataNotFound') || 'ไม่พบข้อมูลการเข้าสู่ระบบ');
         setIsSubmitting(false);
         return;
       }
@@ -287,7 +292,15 @@ export default function AdminProductsPage() {
         price: parseFloat(productForm.price),
         stock: parseFloat(productForm.stock) || 0, // Stock in kilograms (can be decimal)
         category_id: productForm.category_id || null,
-        image: productForm.image || null
+        estimated_weight_kg: productForm.estimated_weight_kg ? parseFloat(productForm.estimated_weight_kg) : null,
+        image: productForm.image || null,
+        selling_options: productForm.unitOption 
+            ? [{
+                label: `ขายเป็น${productForm.unitOption}`,
+                unit: productForm.unitOption,
+                price: parseFloat(productForm.price) || 0
+              }]
+            : null
       };
 
       const response = await fetch(`${apiUrl}/api/fruits`, {
@@ -302,11 +315,11 @@ export default function AdminProductsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'ไม่สามารถสร้างสินค้าได้');
+        throw new Error(data.message || t('cannotCreateProduct') || 'ไม่สามารถสร้างสินค้าได้');
       }
 
-      setSuccess('สร้างสินค้าสำเร็จ');
-      notifySuccess('สร้างสินค้าสำเร็จ', `สินค้า "${productForm.name}" ถูกสร้างเรียบร้อยแล้ว`);
+      setSuccess(t('createProductSuccessTitle') || 'สร้างสินค้าสำเร็จ');
+      notifySuccess(t('createProductSuccessTitle') || 'สร้างสินค้าสำเร็จ', t('createProductSuccessMessage', productForm.name) || `สินค้า "${productForm.name}" ถูกสร้างเรียบร้อยแล้ว`);
       
       // Reset form
       setProductForm({
@@ -315,14 +328,17 @@ export default function AdminProductsPage() {
         price: "",
         stock: "",
         category_id: "",
-        image: null
+        image: null,
+        selling_options: [],
+        unitOption: "",
+        estimated_weight_kg: ""
       });
       setImagePreview(null);
       setShowProductModal(false);
       await loadProducts(); // Reload products
     } catch (err) {
-      setError(err.message || 'เกิดข้อผิดพลาดในการสร้างสินค้า');
-      notifyError('สร้างสินค้าไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาดในการสร้างสินค้า');
+      setError(err.message || t('errorCreatingProduct') || 'เกิดข้อผิดพลาดในการสร้างสินค้า');
+      notifyError(t('createProductFailedTitle') || 'สร้างสินค้าไม่สำเร็จ', err.message || t('errorCreatingProduct') || 'เกิดข้อผิดพลาดในการสร้างสินค้า');
     } finally {
       setIsSubmitting(false);
     }
@@ -330,13 +346,33 @@ export default function AdminProductsPage() {
 
   const handleEditProduct = (product) => {
     setEditingProduct(product);
+
+    // Parse selling_options if it's a string (from DB)
+    let parsedOptions = [];
+    if (product.selling_options) {
+      if (typeof product.selling_options === 'string') {
+        try { parsedOptions = JSON.parse(product.selling_options); } catch (e) { console.error('Error parsing selling_options:', e); }
+      } else if (Array.isArray(product.selling_options)) {
+        parsedOptions = product.selling_options;
+      }
+    }
+    
+    // Extract the unitOption if it exists (for backward compatibility with the new flow)
+    let unitOption = "";
+    if (parsedOptions.length > 0 && parsedOptions[0].unit) {
+        unitOption = parsedOptions[0].unit;
+    }
+
     setProductForm({
       name: product.name || "",
       description: product.description || "",
       price: product.price?.toString() || "",
       stock: product.stock?.toString() || "",
       category_id: product.category_id?.toString() || "",
-      image: product.image || null
+      image: product.image || null,
+      selling_options: parsedOptions,
+      unitOption: unitOption,
+      estimated_weight_kg: product.estimated_weight_kg?.toString() || ""
     });
     setImagePreview(product.image ? `data:image/jpeg;base64,${product.image}` : null);
     setShowEditModal(true);
@@ -346,7 +382,7 @@ export default function AdminProductsPage() {
 
   const handleUpdateProduct = async () => {
     if (!productForm.name || !productForm.price) {
-      setError('กรุณากรอกชื่อสินค้าและราคา');
+      setError(t('enterProductNameAndPrice') || 'กรุณากรอกชื่อสินค้าและราคา');
       return;
     }
 
@@ -358,7 +394,7 @@ export default function AdminProductsPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
 
       if (!token || !apiUrl) {
-        setError('ไม่พบข้อมูลการเข้าสู่ระบบ');
+        setError(t('loginDataNotFound') || 'ไม่พบข้อมูลการเข้าสู่ระบบ');
         setIsSubmitting(false);
         return;
       }
@@ -369,7 +405,15 @@ export default function AdminProductsPage() {
         price: parseFloat(productForm.price),
         stock: parseFloat(productForm.stock) || 0, // Stock in kilograms (can be decimal)
         category_id: productForm.category_id || null,
-        image: productForm.image || null
+        estimated_weight_kg: productForm.estimated_weight_kg ? parseFloat(productForm.estimated_weight_kg) : null,
+        image: productForm.image || null,
+        selling_options: productForm.unitOption 
+            ? [{
+                label: `ขายเป็น${productForm.unitOption}`,
+                unit: productForm.unitOption,
+                price: parseFloat(productForm.price) || 0
+              }]
+            : null
       };
 
       const response = await fetch(`${apiUrl}/api/fruits/${editingProduct.id}`, {
@@ -384,11 +428,11 @@ export default function AdminProductsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'ไม่สามารถอัปเดตสินค้าได้');
+        throw new Error(data.message || t('cannotUpdateProduct') || 'ไม่สามารถอัปเดตสินค้าได้');
       }
 
-      setSuccess('อัปเดตสินค้าสำเร็จ');
-      notifySuccess('อัปเดตสินค้าสำเร็จ', `สินค้า "${productForm.name}" ถูกอัปเดตเรียบร้อยแล้ว`);
+      setSuccess(t('updateProductSuccessTitle') || 'อัปเดตสินค้าสำเร็จ');
+      notifySuccess(t('updateProductSuccessTitle') || 'อัปเดตสินค้าสำเร็จ', t('updateProductSuccessMessage', productForm.name) || `สินค้า "${productForm.name}" ถูกอัปเดตเรียบร้อยแล้ว`);
       
       // Reset form
       setProductForm({
@@ -397,22 +441,25 @@ export default function AdminProductsPage() {
         price: "",
         stock: "",
         category_id: "",
-        image: null
+        image: null,
+        selling_options: [],
+        unitOption: "",
+        estimated_weight_kg: ""
       });
       setImagePreview(null);
       setEditingProduct(null);
       setShowEditModal(false);
       await loadProducts(); // Reload products
     } catch (err) {
-      setError(err.message || 'เกิดข้อผิดพลาดในการอัปเดตสินค้า');
-      notifyError('อัปเดตสินค้าไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาดในการอัปเดตสินค้า');
+      setError(err.message || t('errorUpdatingProduct') || 'เกิดข้อผิดพลาดในการอัปเดตสินค้า');
+      notifyError(t('updateProductFailedTitle') || 'อัปเดตสินค้าไม่สำเร็จ', err.message || t('errorUpdatingProduct') || 'เกิดข้อผิดพลาดในการอัปเดตสินค้า');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteProduct = async (productId, productName) => {
-    if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบสินค้า "${productName}"?`)) {
+    if (!confirm(t('confirmDeleteProduct', productName) || `คุณแน่ใจหรือไม่ว่าต้องการลบสินค้า "${productName}"?`)) {
       return;
     }
 
@@ -424,7 +471,7 @@ export default function AdminProductsPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
 
       if (!token || !apiUrl) {
-        setError('ไม่พบข้อมูลการเข้าสู่ระบบ');
+        setError(t('loginDataNotFound') || 'ไม่พบข้อมูลการเข้าสู่ระบบ');
         setIsSubmitting(false);
         return;
       }
@@ -440,17 +487,26 @@ export default function AdminProductsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'ไม่สามารถลบสินค้าได้');
+        throw new Error(data.message || t('cannotDeleteProduct') || 'ไม่สามารถลบสินค้าได้');
       }
 
-      notifySuccess('ลบสินค้าสำเร็จ', `สินค้า "${productName}" ถูกลบเรียบร้อยแล้ว`);
+      notifySuccess(t('deleteProductSuccessTitle') || 'ลบสินค้าสำเร็จ', t('deleteProductSuccessMessage', productName) || `สินค้า "${productName}" ถูกลบเรียบร้อยแล้ว`);
       await loadProducts(); // Reload products
     } catch (err) {
-      setError(err.message || 'เกิดข้อผิดพลาดในการลบสินค้า');
-      notifyError('ลบสินค้าไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาดในการลบสินค้า');
+      setError(err.message || t('errorDeletingProduct') || 'เกิดข้อผิดพลาดในการลบสินค้า');
+      notifyError(t('deleteProductFailedTitle') || 'ลบสินค้าไม่สำเร็จ', err.message || t('errorDeletingProduct') || 'เกิดข้อผิดพลาดในการลบสินค้า');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const isBananaSelected = () => {
+    const categoryIdStr = productForm.category_id?.toString();
+    const category = categories.find(c => c.id.toString() === categoryIdStr);
+    const categoryName = category ? category.name.toLowerCase() : "";
+    const name = (productForm.name || "").toLowerCase();
+    
+    return name.includes("กล้วย") || name.includes("banana") || categoryName.includes("กล้วย") || categoryName.includes("banana");
   };
 
   if (loading) {
@@ -458,7 +514,7 @@ export default function AdminProductsPage() {
       <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
-            <p className="text-gray-500 font-medium">กำลังโหลดสวนผลไม้...</p>
+            <p className="text-gray-500 font-medium">{t('loadingOrderData') || 'กำลังโหลดข้อมูลออเดอร์...'}</p>
         </div>
       </div>
     );
@@ -480,10 +536,10 @@ export default function AdminProductsPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                 <div>
                    <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-3">
-                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">จัดการ</span> สต็อกสินค้า
+                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">{t('manageStockTitlePart1') || 'จัดการ'}</span> {t('manageStockTitlePart2') || 'สต็อกสินค้า'}
                    </h1>
                    <p className="text-lg text-gray-500 font-medium max-w-xl">
-                       จัดการผลไม้สด อัปเดตสต็อก และจัดหมวดหมู่สินค้า ทั้งหมดในที่เดียว
+                       {t('manageStockDesc') || 'จัดการผลไม้สด อัปเดตสต็อก และจัดหมวดหมู่สินค้า ทั้งหมดในที่เดียว'}
                    </p>
                 </div>
                 <div className="flex flex-wrap gap-4">
@@ -493,7 +549,7 @@ export default function AdminProductsPage() {
                         className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-green-100 text-green-700 rounded-2xl hover:bg-green-50 hover:border-green-300 hover:-translate-y-1 transition-all duration-300 font-bold shadow-sm hover:shadow-md"
                      >
                         <TagIcon className="w-5 h-5" />
-                        <span>เพิ่มหมวดหมู่</span>
+                        <span>{t('addCategoryBtn') || 'เพิ่มหมวดหมู่'}</span>
                      </button>
                     {/* Add Product Button */}
                     <button
@@ -501,7 +557,7 @@ export default function AdminProductsPage() {
                         className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-2xl hover:shadow-lg hover:shadow-orange-200 hover:-translate-y-1 transition-all duration-300 font-bold shadow-md"
                     >
                         <PlusIcon className="w-5 h-5" />
-                        <span>เพิ่มสินค้า</span>
+                        <span>{t('addProductBtn') || 'เพิ่มสินค้า'}</span>
                     </button>
                 </div>
             </div>
@@ -514,19 +570,19 @@ export default function AdminProductsPage() {
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-gray-100 sticky top-24">
                         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                             <FunnelIcon className="w-5 h-5 text-orange-500" />
-                            ตัวกรอง
+                            {t('filterTitle') || 'ตัวกรอง'}
                         </h3>
                         
                         {/* Search */}
                         <div className="mb-6">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">ค้นหา</label>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('searchLabel') || 'ค้นหา'}</label>
                             <div className="relative group">
                                 <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="ค้นหาชื่อสินค้า..."
+                                    placeholder={t('searchProductPlaceholder') || "ค้นหาชื่อสินค้า..."}
                                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-orange-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-50 transition-all duration-300 font-medium text-gray-700 placeholder-gray-400"
                                 />
                             </div>
@@ -534,7 +590,7 @@ export default function AdminProductsPage() {
 
                         {/* Categories */}
                         <div>
-                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">หมวดหมู่</label>
+                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('categoryLabel') || 'หมวดหมู่'}</label>
                              <div className="space-y-2">
                                 <button
                                     onClick={() => setSelectedCategoryFilter("")}
@@ -544,7 +600,7 @@ export default function AdminProductsPage() {
                                         : "text-gray-600 hover:bg-gray-50"
                                     }`}
                                 >
-                                    <span>สินค้าทั้งหมด</span>
+                                    <span>{t('allProductsLabel') || 'สินค้าทั้งหมด'}</span>
                                     {selectedCategoryFilter === "" && <div className="w-2 h-2 rounded-full bg-orange-500"></div>}
                                 </button>
                                 {categories.map(category => (
@@ -567,7 +623,7 @@ export default function AdminProductsPage() {
                         {/* Summary Stats (Optional - Simple count) */}
                         <div className="mt-8 pt-6 border-t border-gray-100">
                              <div className="flex items-center justify-between text-sm">
-                                 <span className="text-gray-500 font-medium">สินค้าทั้งหมด</span>
+                                 <span className="text-gray-500 font-medium">{t('totalProductsLabel') || 'สินค้าทั้งหมด'}</span>
                                  <span className="font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded-lg">{filteredProducts.length}</span>
                              </div>
                         </div>
@@ -578,10 +634,10 @@ export default function AdminProductsPage() {
                 <div className="lg:col-span-3">
                     {/* Header Row (Desktop) */}
                     <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 mb-2 font-bold text-gray-400 text-xs uppercase tracking-wider">
-                        <div className="col-span-6 pl-20">ข้อมูลสินค้า</div>
-                        <div className="col-span-2 text-right">ราคา</div>
-                        <div className="col-span-2 text-center">คงเหลือ</div>
-                        <div className="col-span-2 text-right">จัดการ</div>
+                        <div className="col-span-6 pl-20">{t('productInfoCol') || 'ข้อมูลสินค้า'}</div>
+                        <div className="col-span-2 text-right">{t('priceCol') || 'ราคา'}</div>
+                        <div className="col-span-2 text-center">{t('stockCol') || 'คงเหลือ'}</div>
+                        <div className="col-span-2 text-right">{t('manageCol') || 'จัดการ'}</div>
                     </div>
 
                     <div className="space-y-4">
@@ -590,13 +646,13 @@ export default function AdminProductsPage() {
                                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                      <MagnifyingGlassIcon className="w-8 h-8 text-gray-300" />
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">ไม่พบสินค้า</h3>
-                                <p className="text-gray-500">ลองปรับการค้นหาหรือเลือกหมวดหมู่อื่นดูนะครับ</p>
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">{t('noProductsFoundTitle') || 'ไม่พบสินค้า'}</h3>
+                                <p className="text-gray-500">{t('noProductsFoundDesc') || 'ลองปรับการค้นหาหรือเลือกหมวดหมู่อื่นดูนะครับ'}</p>
                                 <button 
                                     onClick={() => {setSearchQuery(""); setSelectedCategoryFilter("");}}
                                     className="mt-6 text-orange-500 font-bold hover:text-orange-600 hover:underline"
                                 >
-                                    ล้างตัวกรองทั้งหมด
+                                    {t('clearAllFiltersBtn') || 'ล้างตัวกรองทั้งหมด'}
                                 </button>
                             </div>
                         ) : (
@@ -628,19 +684,19 @@ export default function AdminProductsPage() {
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
-                                                        {product.category_name || 'ไม่ระบุหมวดหมู่'}
+                                                        {product.category_name || t('noCategorySpecified') || 'ไม่ระบุหมวดหมู่'}
                                                     </span>
                                                 </div>
                                                 <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-orange-600 transition-colors">
                                                     {product.name}
                                                 </h3>
-                                                <p className="text-sm text-gray-500 truncate max-w-xs">{product.description || 'ไม่มีรายละเอียด'}</p>
+                                                <p className="text-sm text-gray-500 truncate max-w-xs">{product.description || t('noDescription') || 'ไม่มีรายละเอียด'}</p>
                                             </div>
                                         </div>
 
                                         {/* Price */}
                                         <div className="w-full md:col-span-2 flex md:block items-center justify-between md:text-right">
-                                            <span className="md:hidden text-sm font-medium text-gray-400">ราคา</span>
+                                            <span className="md:hidden text-sm font-medium text-gray-400">{t('priceCol') || 'ราคา'}</span>
                                             <div className="text-lg font-bold text-gray-900">
                                                 ฿{parseFloat(product.price).toFixed(2)}
                                             </div>
@@ -648,7 +704,7 @@ export default function AdminProductsPage() {
 
                                         {/* Stock */}
                                         <div className="w-full md:col-span-2 flex md:block items-center justify-between md:text-center">
-                                            <span className="md:hidden text-sm font-medium text-gray-400">คงเหลือ</span>
+                                            <span className="md:hidden text-sm font-medium text-gray-400">{t('stockCol') || 'คงเหลือ'}</span>
                                              <div className="flex flex-col items-end md:items-center">
                                                 <div className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1.5 ${
                                                     parseFloat(product.stock) > 10 
@@ -668,14 +724,14 @@ export default function AdminProductsPage() {
                                             <button
                                                 onClick={() => handleEditProduct(product)}
                                                 className="p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all hover:scale-110 active:scale-95"
-                                                title="Edit"
+                                                title={t('editBtnTitle') || "Edit"}
                                             >
                                                 <PencilIcon className="w-5 h-5" />
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteProduct(product.id, product.name)}
                                                 className="p-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all hover:scale-110 active:scale-95"
-                                                title="Delete"
+                                                title={t('deleteBtnTitle') || "Delete"}
                                                 disabled={isSubmitting}
                                             >
                                                 <TrashIcon className="w-5 h-5" />
@@ -700,8 +756,8 @@ export default function AdminProductsPage() {
             
             <div className="flex items-start justify-between mb-8 relative z-10">
               <div>
-                <h3 className="text-2xl font-black text-gray-900 tracking-tight">เพิ่มหมวดหมู่ใหม่</h3>
-                <p className="text-gray-500 text-sm mt-1">จัดระเบียบสินค้าของคุณให้ดียิ่งขึ้น</p>
+                <h3 className="text-2xl font-black text-gray-900 tracking-tight">{t('addNewCategoryTitle') || 'เพิ่มหมวดหมู่ใหม่'}</h3>
+                <p className="text-gray-500 text-sm mt-1">{t('addNewCategoryDesc') || 'จัดระเบียบสินค้าของคุณให้ดียิ่งขึ้น'}</p>
               </div>
               <button
                 onClick={() => { setShowCategoryModal(false); setNewCategoryName(""); setError(""); setSuccess(""); }}
@@ -714,13 +770,13 @@ export default function AdminProductsPage() {
             <div className="space-y-6 relative z-10">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-                  ชื่อหมวดหมู่
+                  {t('categoryNameLabel') || 'ชื่อหมวดหมู่'}
                 </label>
                 <input
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="เช่น ผลไม้เมืองร้อน..."
+                  placeholder={t('categoryNamePlaceholder') || "เช่น ผลไม้เมืองร้อน..."}
                   className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-blue-400 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all font-medium text-lg placeholder-gray-400"
                   disabled={isSubmitting}
                   onKeyPress={(e) => { if (e.key === 'Enter' && !isSubmitting) handleCreateCategory(); }}
@@ -737,7 +793,7 @@ export default function AdminProductsPage() {
                   disabled={isSubmitting}
                   className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
                 >
-                    {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><TagIcon className="w-5 h-5" /> สร้างเลย</>}
+                    {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><TagIcon className="w-5 h-5" /> {t('createBtn') || 'สร้างเลย'}</>}
                 </button>
               </div>
             </div>
@@ -755,10 +811,10 @@ export default function AdminProductsPage() {
             <div className="flex items-start justify-between mb-8 relative z-10">
               <div>
                 <h3 className="text-3xl font-black text-gray-900 tracking-tight">
-                    {showEditModal ? 'แก้ไขสินค้า' : 'เพิ่มสินค้าใหม่'}
+                    {showEditModal ? (t('editProductTitle') || 'แก้ไขสินค้า') : (t('addProductTitle') || 'เพิ่มสินค้าใหม่')}
                 </h3>
                 <p className="text-gray-500 mt-1">
-                    {showEditModal ? 'อัปเดตรายละเอียดและสต็อกสินค้า' : 'เพิ่มผลไม้สดใหม่ลงในสต็อกของคุณ'}
+                    {showEditModal ? (t('editProductDesc') || 'อัปเดตรายละเอียดและสต็อกสินค้า') : (t('addProductDesc') || 'เพิ่มผลไม้สดใหม่ลงในสต็อกของคุณ')}
                 </p>
               </div>
               <button
@@ -769,7 +825,7 @@ export default function AdminProductsPage() {
                   } else {
                     setShowProductModal(false);
                   }
-                  setProductForm({ name: "", description: "", price: "", stock: "", category_id: "", image: null });
+                  setProductForm({ name: "", description: "", price: "", stock: "", category_id: "", image: null, selling_options: [], unitOption: "", estimated_weight_kg: "" });
                   setImagePreview(null);
                   setError("");
                   setSuccess("");
@@ -795,7 +851,7 @@ export default function AdminProductsPage() {
                                 
                                 <label className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[2px]">
                                     <PhotoIcon className="w-8 h-8 mb-1" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">เปลี่ยนรูปภาพ</span>
+                                    <span className="text-xs font-bold uppercase tracking-wider">{t('changeImage') || 'เปลี่ยนรูปภาพ'}</span>
                                     <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} disabled={isSubmitting} />
                                 </label>
                             </div>
@@ -810,12 +866,12 @@ export default function AdminProductsPage() {
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                        {/* Name */}
                        <div className="md:col-span-2">
-                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">ชื่อสินค้า <span className="text-red-500">*</span></label>
+                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">{t('productNameLabel') || 'ชื่อสินค้า'} <span className="text-red-500">*</span></label>
                            <input
                                type="text"
                                value={productForm.name}
                                onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
-                               placeholder="เช่น แอปเปิ้ลฮันนี่คริสป์"
+                               placeholder={t('productNamePlaceholder') || "เช่น แอปเปิ้ลฮันนี่คริสป์"}
                                className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-orange-400 rounded-2xl focus:outline-none focus:ring-4 focus:ring-orange-50 transition-all font-medium text-lg placeholder-gray-400"
                                disabled={isSubmitting}
                            />
@@ -823,7 +879,7 @@ export default function AdminProductsPage() {
 
                        {/* Category */}
                        <div className="md:col-span-2">
-                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">หมวดหมู่</label>
+                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">{t('categoryLabel') || 'หมวดหมู่'}</label>
                            <div className="relative">
                                <TagIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                <select
@@ -832,7 +888,7 @@ export default function AdminProductsPage() {
                                    className="w-full pl-12 pr-5 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-orange-400 rounded-2xl focus:outline-none focus:ring-4 focus:ring-orange-50 transition-all font-medium text-gray-700 appearance-none"
                                    disabled={isSubmitting}
                                >
-                                   <option value="">เลือกหมวดหมู่</option>
+                                   <option value="">{t('selectCategoryPlaceholder') || 'เลือกหมวดหมู่'}</option>
                                    {categories.map((category) => (
                                        <option key={category.id} value={category.id}>{category.name}</option>
                                    ))}
@@ -843,9 +899,42 @@ export default function AdminProductsPage() {
                            </div>
                        </div>
 
+                       {/* Banana Unit Option (Conditional) */}
+                       {isBananaSelected() && (
+                           <div className="md:col-span-2 p-4 bg-orange-50 border border-orange-100 rounded-2xl animate-fade-in flex flex-col sm:flex-row gap-4 items-center justify-between">
+                               <div>
+                                   <label className="block text-sm font-bold text-orange-800 mb-1 uppercase tracking-wide">{t('sellingFormatForBanana') || 'รูปแบบการขาย (สำหรับกล้วย)'}</label>
+                                   <p className="text-xs text-orange-600">{t('selectSellingUnitDesc') || 'เลือกหน่วยการขายเพื่อให้ลูกค้าเลือกซื้อได้ถูกต้อง'}</p>
+                               </div>
+                               <div className="w-full sm:w-64">
+                                   <div className="relative">
+                                       <TagIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-400" />
+                                       <select
+                                           value={productForm.unitOption || ""}
+                                           onChange={(e) => setProductForm(prev => ({ ...prev, unitOption: e.target.value }))}
+                                           className="w-full pl-11 pr-5 py-3 bg-white border-2 border-orange-200 focus:bg-white focus:border-orange-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all font-bold text-orange-800 appearance-none shadow-sm cursor-pointer"
+                                           disabled={isSubmitting}
+                                       >
+                                           <option value="">{t('selectUnitPlaceholder') || 'เลือกหน่วย...'}</option>
+                                           <option value="หวี">{t('sellByBunch') || 'ขายเป็น "หวี"'}</option>
+                                           <option value="ลูก">{t('sellByPiece') || 'ขายเป็น "ลูก"'}</option>
+                                       </select>
+                                       <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                           <ArrowsUpDownIcon className="w-4 h-4 text-orange-400" />
+                                       </div>
+                                   </div>
+                               </div>
+                           </div>
+                       )}
+
                        {/* Price */}
                        <div>
-                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">ราคา (บาท) <span className="text-red-500">*</span></label>
+                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                              {isBananaSelected() && productForm.unitOption 
+                                   ? (t('pricePerUnitLabel', productForm.unitOption) || `ราคา (บาท / ${productForm.unitOption}) `) 
+                                   : (t('priceBahtLabel') || 'ราคา (บาท) ')}
+                              <span className="text-red-500">*</span>
+                           </label>
                            <input
                                type="number"
                                value={productForm.price}
@@ -860,7 +949,11 @@ export default function AdminProductsPage() {
 
                        {/* Stock */}
                        <div>
-                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">สต็อก (กก.)</label>
+                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                              {isBananaSelected() && productForm.unitOption 
+                                   ? (t('amountUnitLabel', productForm.unitOption) || `จำนวน (${productForm.unitOption})`) 
+                                   : (t('stockKgLabel') || 'สต็อก (กก.)')}
+                           </label>
                            <input
                                type="number"
                                value={productForm.stock}
@@ -872,13 +965,30 @@ export default function AdminProductsPage() {
                            />
                        </div>
 
+                       {/* Estimated Weight Option */}
+                       <div>
+                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                               {t('estimatedWeightLabel') || 'น้ำหนักโดยประมาณ (กก./ชิ้น)'}
+                           </label>
+                           <input
+                               type="number"
+                               value={productForm.estimated_weight_kg || ''}
+                               onChange={(e) => setProductForm(prev => ({ ...prev, estimated_weight_kg: e.target.value }))}
+                               placeholder={t('estimatedWeightPlaceholder') || "เช่น 1.5"}
+                               min="0"
+                               step="0.01"
+                               className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-orange-400 rounded-2xl focus:outline-none focus:ring-4 focus:ring-orange-50 transition-all font-medium text-lg placeholder-gray-400"
+                               disabled={isSubmitting}
+                           />
+                       </div>
+
                        {/* Description */}
                        <div className="md:col-span-2">
-                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">รายละเอียด</label>
+                           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">{t('descriptionLabel') || 'รายละเอียด'}</label>
                            <textarea
                                value={productForm.description}
                                onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
-                               placeholder="บรรยายรสชาติ, ที่มา, สายพันธุ์..."
+                               placeholder={t('descriptionPlaceholder') || "บรรยายรสชาติ, ที่มา, สายพันธุ์..."}
                                rows={3}
                                className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-orange-400 rounded-2xl focus:outline-none focus:ring-4 focus:ring-orange-50 transition-all font-medium text-base placeholder-gray-400 resize-none"
                                disabled={isSubmitting}
@@ -909,7 +1019,7 @@ export default function AdminProductsPage() {
                            ) : (
                                <>
                                 {showEditModal ? <PencilIcon className="w-5 h-5"/> : <PlusIcon className="w-5 h-5"/>}
-                                {showEditModal ? 'อัปเดตสินค้า' : 'เพิ่มสินค้า'}
+                                {showEditModal ? (t('updateProductBtn') || 'อัปเดตสินค้า') : (t('addProductBtn') || 'เพิ่มสินค้า')}
                                </>
                            )}
                        </button>

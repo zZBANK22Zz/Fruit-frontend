@@ -13,9 +13,11 @@ import Navbar from "../../components/Navbar";
 import { notifySuccess } from "../../utils/notificationUtils";
 import { compressImage, validateImageFile } from "../../utils/imageUtils";
 import OrangeSpinner from "../../components/OrangeSpinner";
+import { useLanguage } from "../../utils/LanguageContext";
 
 export default function PaymentPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { orderId, amount } = router.query;
   const [qrCode, setQrCode] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -175,8 +177,8 @@ export default function PaymentPage() {
         const totalAmount = data.data?.amount || paymentAmount;
         
         notifySuccess(
-          'อัปโหลดหลักฐานสำเร็จ',
-          `เราได้รับหลักฐานการชำระเงินของคุณแล้ว จำนวน ${parseFloat(totalAmount).toFixed(2)} บาท`
+          t('uploadSuccess'),
+          t('uploadSuccessDesc', parseFloat(totalAmount).toFixed(2))
         );
         
         // Redirect to bill page - The backend already updated status to 'processing' or 'paid'
@@ -200,7 +202,7 @@ export default function PaymentPage() {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <OrangeSpinner className="w-16 h-16 mx-auto mb-4" />
-            <div className="text-gray-500">กำลังโหลด QR Code...</div>
+            <div className="text-gray-500">{t('loadingQR')}</div>
           </div>
         </div>
       </div>
@@ -218,7 +220,7 @@ export default function PaymentPage() {
               onClick={() => router.back()}
               className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
-              กลับ
+              {t('back')}
             </button>
           </div>
         </div>
@@ -235,9 +237,9 @@ export default function PaymentPage() {
         <div className="text-center py-8 px-4">
           <div className="flex items-center justify-center gap-2 mb-3">
             <span className="w-1 h-8 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900">ชำระเงิน</h1>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900">{t('payment')}</h1>
           </div>
-          <p className="text-gray-600 text-sm font-medium">สแกน QR Code และแนบสลิปเพื่อยืนยัน</p>
+          <p className="text-gray-600 text-sm font-medium">{t('paymentSubtitle')}</p>
         </div>
 
         {/* Progress Indicator */}
@@ -316,7 +318,7 @@ export default function PaymentPage() {
 
               {/* Payment Details Text */}
               <div className="text-center space-y-2">
-                <p className="text-[#555a60] text-sm font-medium">สแกน QR เพื่อโอนเงินเข้าบัญชี</p>
+                <p className="text-[#555a60] text-sm font-medium">{t('scanQRInstruction')}</p>
                 <h3 className="text-xl font-bold text-gray-800">นาย พงษ์ศักดิ์ เมฆอรุณ</h3>
                 <div className="flex flex-col gap-1 text-[#666c72] text-sm">
                   <p>เบอร์โทรศัพท์มือถือ xxx-xxx-4394</p>
@@ -326,7 +328,7 @@ export default function PaymentPage() {
 
               {/* Amount Display */}
               <div className="mt-8 w-full bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50 shadow-inner text-center">
-                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">จำนวนเงินที่ต้องชำระ</p>
+                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">{t('amountToPay')}</p>
                 <p className="text-3xl font-black text-orange-600">
                   {paymentAmount.toFixed(2)} <span className="text-lg">บาท</span>
                 </p>
@@ -350,7 +352,7 @@ export default function PaymentPage() {
               <div className="p-2 bg-green-100 rounded-lg">
                 <PhotoIcon className="w-6 h-6 text-green-600" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900">แนบหลักฐานการโอนเงิน</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('attachSlip')}</h2>
             </div>
 
             <div className="space-y-4">
@@ -363,8 +365,8 @@ export default function PaymentPage() {
                     <PhotoIcon className="w-7 h-7 text-gray-400 group-hover:text-orange-500" />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-gray-700">คลิกเพื่ออัปโหลดรูปภาพสลิป</p>
-                    <p className="text-xs text-gray-400 mt-1">รองรับ JPG, PNG (สูงสุด 5MB)</p>
+                    <p className="text-sm font-bold text-gray-700">{t('clickToUploadSlip')}</p>
+                     <p className="text-xs text-gray-400 mt-1">{t('supportedFormats')}</p>
                   </div>
                 </button>
               ) : (
@@ -377,7 +379,7 @@ export default function PaymentPage() {
                     <XMarkIcon className="w-6 h-6" />
                   </button>
                   <div className="absolute bottom-0 left-0 right-0 bg-black/50 backdrop-blur-sm p-2 text-center">
-                    <span className="text-white text-xs font-bold">เลือกรูปภาพแล้ว</span>
+                    <span className="text-white text-xs font-bold">{t('imageSelected')}</span>
                   </div>
                 </div>
               )}
@@ -393,12 +395,12 @@ export default function PaymentPage() {
               <div className="pt-2">
                 <label className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
                   <PencilSquareIcon className="w-4 h-4 text-gray-400" />
-                  หมายเหตุเพิ่มเติม (ถ้ามี)
+                  {t('additionalNotes')}
                 </label>
                 <textarea
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
-                  placeholder="เช่น โอนจากธนาคาร..."
+                  placeholder={t('notesPlaceholder')}
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-orange-400 focus:outline-none transition-colors text-sm resize-none h-24 bg-gray-50/50"
                 ></textarea>
               </div>
@@ -414,9 +416,9 @@ export default function PaymentPage() {
                 <InformationCircleIcon className="w-6 h-6 text-blue-700" />
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-bold text-blue-900 mb-2">คำชี้แจง</h3>
+                <h3 className="text-sm font-bold text-blue-900 mb-2">{t('instructionTitle')}</h3>
                 <p className="text-xs text-blue-800 leading-relaxed">
-                  กรุณาตรวจสอบยอดเงินและเบอร์พร้อมเพย์ให้ถูกต้องก่อนโอนเงิน หลังจากโอนเรียบร้อยแล้ว **ต้องแนบหลักฐานการโอน** เพื่อให้เจ้าหน้าที่ตรวจสอบและออกใบเสร็จรับเงิน
+                  {t('instructionText')}
                 </p>
               </div>
             </div>
@@ -435,17 +437,17 @@ export default function PaymentPage() {
             {isConfirming ? (
               <>
                 <OrangeSpinner className="w-6 h-6" />
-                <span>กำลังดำเนินการ...</span>
+                <span>{t('processing')}</span>
               </>
             ) : isUploading ? (
               <>
                 <OrangeSpinner className="w-6 h-6" />
-                <span>กำลังโหลดสลิป...</span>
+                <span>{t('loadingSlip')}</span>
               </>
             ) : (
               <>
                 <CheckCircleIcon className="w-6 h-6" />
-                <span>ยืนยันการชำระเงิน</span>
+                <span>{t('confirmPayment')}</span>
               </>
             )}
           </button>
@@ -456,7 +458,7 @@ export default function PaymentPage() {
             className="w-full bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold py-3 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-sm"
           >
             <ArrowLeftIcon className="w-4 h-4" />
-            ย้อนกลับ
+            {t('back')}
           </button>
         </div>
       </div>

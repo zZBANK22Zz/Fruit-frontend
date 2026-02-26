@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useLanguage } from "../../utils/LanguageContext";
 import { 
   UserIcon, 
   PencilIcon, 
@@ -23,6 +24,7 @@ import { handleTokenExpiration } from "../../utils/authUtils";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -502,14 +504,14 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-white">
         <Navbar showBackButton={true} />
         <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">เซสชั่นหมดอายุ</h2>
-            <p className="text-gray-500 mb-8">กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อดูโปรไฟล์ของคุณ</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('sessionExpired') || "เซสชั่นหมดอายุ"}</h2>
+            <p className="text-gray-500 mb-8">{t('loginAgainToViewProfile') || "กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อดูโปรไฟล์ของคุณ"}</p>
             <Button 
                 variant="primary" 
                 className="rounded-lg px-6 py-2 bg-orange-500 text-white hover:bg-orange-600 transition-colors shadow-lg shadow-orange-200"
                 onClick={() => router.push('/registration/LoginPage')}
             >
-                เข้าสู่ระบบ
+                {t('login') || "เข้าสู่ระบบ"}
             </Button>
         </div>
       </div>
@@ -566,12 +568,12 @@ export default function ProfilePage() {
                     </h1>
                      <div className="flex items-center gap-3 mt-3 text-sm font-bold">
                         <span className={`px-3 py-1 rounded-full text-xs uppercase tracking-wide ${userData.role === 'admin' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
-                            {userData.role === 'admin' ? 'ผู้ดูแลระบบ' : 'สมาชิก'}
+                            {userData.role === 'admin' ? (t('admin') || 'ผู้ดูแลระบบ') : (t('member') || 'สมาชิก')}
                         </span>
                         {isLineUser && (
                             <span className="flex items-center gap-1 text-[#06C755]">
                                 <ShieldCheckIcon className="w-4 h-4" />
-                                <span className="font-semibold">เชื่อมต่อ LINE แล้ว</span>
+                                <span className="font-semibold">{t('lineConnected') || 'เชื่อมต่อ LINE แล้ว'}</span>
                             </span>
                         )}
                     </div>
@@ -585,7 +587,7 @@ export default function ProfilePage() {
                             className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-bold text-gray-900 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg hover:shadow-orange-100 transition-all duration-300 flex items-center justify-center gap-2 group"
                         >
                             <PencilIcon className="w-4 h-4 group-hover:-rotate-12 transition-transform" />
-                            แก้ไขโปรไฟล์
+                            {t('editProfile') || 'แก้ไขโปรไฟล์'}
                         </button>
                     ) : (
                         <div className="flex gap-3 w-full sm:w-auto">
@@ -594,14 +596,14 @@ export default function ProfilePage() {
                                 disabled={isSaving}
                                 className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors"
                             >
-                                ยกเลิก
+                                {t('cancel') || 'ยกเลิก'}
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
                                 className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-bold shadow-lg shadow-orange-200 hover:shadow-orange-300 hover:-translate-y-0.5 transition-all disabled:opacity-50"
                             >
-                                {isSaving ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}
+                                {isSaving ? (t('saving') || 'กำลังบันทึก...') : (t('saveChanges') || 'บันทึกการเปลี่ยนแปลง')}
                             </button>
                         </div>
                 )}
@@ -618,14 +620,14 @@ export default function ProfilePage() {
                         <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
                             <UserIcon className="w-5 h-5" />
                         </div>
-                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">ข้อมูลระบุตัวตน</h3>
+                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">{t('identityInfo') || 'ข้อมูลระบุตัวตน'}</h3>
                     </div>
-                    <p className="text-sm text-gray-500 pl-11">ข้อมูลพื้นฐานเกี่ยวกับตัวตนของคุณ</p>
+                    <p className="text-sm text-gray-500 pl-11">{t('identityInfoDesc') || 'ข้อมูลพื้นฐานเกี่ยวกับตัวตนของคุณ'}</p>
                 </div>
                 <div className="md:col-span-8 space-y-8">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                          <div className="group">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">ชื่อผู้ใช้</label>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('username') || 'ชื่อผู้ใช้'}</label>
                             {isEditing ? (
                                 <input
                                     type="text"
@@ -640,20 +642,20 @@ export default function ProfilePage() {
                         </div>
                         
                          <div className="group">
-                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">สถานะ</label>
+                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('status') || 'สถานะ'}</label>
                              <div className="text-lg font-bold text-green-600 flex items-center gap-2">
                                 <span className="relative flex h-3 w-3">
                                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                                 </span>
-                                ใช้งานอยู่
+                                {t('active') || 'ใช้งานอยู่'}
                              </div>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                         <div className="group">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">ชื่อจริง</label>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('firstName') || 'ชื่อจริง'}</label>
                              {isEditing ? (
                                 <input
                                     type="text"
@@ -661,14 +663,14 @@ export default function ProfilePage() {
                                     value={formData.first_name}
                                     onChange={handleInputChange}
                                     className="block w-full border-0 border-b-2 border-gray-100 bg-transparent py-2 px-0 text-gray-900 font-bold placeholder:text-gray-300 focus:border-orange-400 focus:ring-0 transition-colors sm:text-base"
-                                    placeholder="กรอกชื่อจริง"
+                                    placeholder={t('inputPlaceholder')? t('inputPlaceholder')(t('firstName')||'ชื่อจริง') : "กรอกชื่อจริง"}
                                 />
                             ) : (
                                 <div className="text-lg font-medium text-gray-900">{userData.first_name || '—'}</div>
                             )}
                         </div>
                         <div className="group">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">นามสกุล</label>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('lastName') || 'นามสกุล'}</label>
                              {isEditing ? (
                                 <input
                                     type="text"
@@ -676,7 +678,7 @@ export default function ProfilePage() {
                                     value={formData.last_name}
                                     onChange={handleInputChange}
                                     className="block w-full border-0 border-b-2 border-gray-100 bg-transparent py-2 px-0 text-gray-900 font-bold placeholder:text-gray-300 focus:border-orange-400 focus:ring-0 transition-colors sm:text-base"
-                                    placeholder="กรอกนามสกุล"
+                                    placeholder={t('inputPlaceholder')? t('inputPlaceholder')(t('lastName')||'นามสกุล') : "กรอกนามสกุล"}
                                 />
                             ) : (
                                 <div className="text-lg font-medium text-gray-900">{userData.last_name || '—'}</div>
@@ -695,13 +697,13 @@ export default function ProfilePage() {
                         <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
                             <LockClosedIcon className="w-5 h-5" />
                         </div>
-                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">ความปลอดภัย</h3>
+                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">{t('security') || 'ความปลอดภัย'}</h3>
                     </div>
-                    <p className="text-sm text-gray-500 pl-11">จัดการข้อมูลการติดต่อและรหัสผ่านของคุณ</p>
+                    <p className="text-sm text-gray-500 pl-11">{t('securityDesc') || 'จัดการข้อมูลการติดต่อและรหัสผ่านของคุณ'}</p>
                 </div>
                 <div className="md:col-span-8 space-y-8">
                      <div className="group">
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">อีเมล</label>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('email') || 'อีเมล'}</label>
                          {isEditing ? (
                             <input
                                 type="email"
@@ -718,7 +720,7 @@ export default function ProfilePage() {
                     <div className="group">
                         <div className="flex items-center justify-between mb-2">
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                <PhoneIcon className="w-3 h-3" /> เบอร์โทรศัพท์
+                                <PhoneIcon className="w-3 h-3" /> {t('phoneNumber') || 'เบอร์โทรศัพท์'}
                             </label>
                             {!isEditingPhone && (
                               <div className="flex gap-2">
@@ -727,18 +729,18 @@ export default function ProfilePage() {
                                     <button
                                       onClick={() => { setPhoneInput(userData.phone_number || ''); setIsEditingPhone(true); }}
                                       className="text-xs px-2.5 py-1 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 font-semibold transition-colors"
-                                    >แก้ไข</button>
+                                    >{t('edit') || 'แก้ไข'}</button>
                                     <button
                                       onClick={handleDeletePhone}
                                       disabled={isSavingPhone}
                                       className="text-xs px-2.5 py-1 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 font-semibold transition-colors"
-                                    >ลบ</button>
+                                    >{t('delete') || 'ลบ'}</button>
                                   </>
                                 ) : (
                                   <button
                                     onClick={() => setIsEditingPhone(true)}
                                     className="text-xs px-2.5 py-1 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 font-semibold transition-colors"
-                                  >+ เพิ่มเบอร์โทร</button>
+                                  >{t('addPhone') || '+ เพิ่มเบอร์โทร'}</button>
                                 )}
                               </div>
                             )}
@@ -749,7 +751,7 @@ export default function ProfilePage() {
                                     type="tel"
                                     value={phoneInput}
                                     onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                                    placeholder="เช่น 0812345678"
+                                    placeholder={t('phonePlaceholder') || "เช่น 0812345678"}
                                     autoFocus
                                     maxLength={10}
                                     className="flex-1 border-0 border-b-2 border-orange-300 bg-transparent py-2 px-0 text-gray-900 font-medium placeholder:text-gray-300 focus:border-orange-500 focus:ring-0 transition-colors text-base outline-none"
@@ -758,15 +760,15 @@ export default function ProfilePage() {
                                     onClick={handleSavePhone}
                                     disabled={isSavingPhone}
                                     className="text-xs px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 font-semibold transition-colors disabled:opacity-50"
-                                >{ isSavingPhone ? '...' : 'บันทึก' }</button>
+                                >{ isSavingPhone ? '...' : (t('saveButton') || 'บันทึก') }</button>
                                 <button
                                     onClick={() => { setIsEditingPhone(false); setPhoneInput(userData.phone_number || ''); }}
                                     className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 font-semibold transition-colors"
-                                >ยกเลิก</button>
+                                >{t('cancel') || 'ยกเลิก'}</button>
                             </div>
                         ) : (
                             <div className="text-lg font-medium text-gray-900">
-                                {userData.phone_number || <span className="text-gray-400 text-base">ยังไม่ได้เพิ่มเบอร์โทร</span>}
+                                {userData.phone_number || <span className="text-gray-400 text-base">{t('noPhoneAdded') || 'ยังไม่ได้เพิ่มเบอร์โทร'}</span>}
                             </div>
                         )}
                     </div>
@@ -775,7 +777,7 @@ export default function ProfilePage() {
                         <div className="group pt-4">
                              <label className="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2 flex items-center gap-2">
                                 <LockClosedIcon className="w-3 h-3" />
-                                รหัสผ่านใหม่
+                                {t('newPassword') || 'รหัสผ่านใหม่'}
                              </label>
                              <input
                                 type="password"
@@ -783,7 +785,7 @@ export default function ProfilePage() {
                                 value={formData.password}
                                 onChange={handleInputChange}
                                 className="block w-full border-0 border-b-2 border-red-100 bg-transparent py-2 px-0 text-gray-900 font-medium placeholder:text-gray-300 focus:border-red-500 focus:ring-0 transition-colors sm:text-base"
-                                placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน"
+                                placeholder={t('leaveBlankIfNotChanging') || "เว้นว่างไว้หากไม่ต้องการเปลี่ยน"}
                             />
                         </div>
                     )}
@@ -800,11 +802,11 @@ export default function ProfilePage() {
                             <MapPinIcon className="w-5 h-5" />
                         </div>
                         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">
-                            {userData.role === 'admin' ? 'ที่อยู่ของร้าน' : 'ที่อยู่จัดส่ง'}
+                            {userData.role === 'admin' ? (t('storeAddress') || 'ที่อยู่ของร้าน') : (t('deliveryAddress') || 'ที่อยู่จัดส่ง')}
                         </h3>
                     </div>
                     <p className="text-sm text-gray-500 pl-11">
-                        {userData.role === 'admin' ? 'จัดการที่ตั้งร้านค้าของคุณ' : 'จัดการที่อยู่สำหรับการจัดส่งสินค้า'}
+                        {userData.role === 'admin' ? (t('manageStoreAddress') || 'จัดการที่ตั้งร้านค้าของคุณ') : (t('manageDeliveryAddress') || 'จัดการที่อยู่สำหรับการจัดส่งสินค้า')}
                     </p>
                 </div>
                 <div className="md:col-span-8 space-y-4">
@@ -824,14 +826,14 @@ export default function ProfilePage() {
                                             setIsAddressModalOpen(true);
                                         }}
                                         className="p-2 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-colors"
-                                        title="แก้ไข"
+                                        title={t('edit') || "แก้ไข"}
                                     >
                                         <PencilIcon className="w-4 h-4" />
                                     </button>
                                     <button 
                                         onClick={() => setAddressToDelete(addr)}
                                         className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                                        title="ลบ"
+                                        title={t('delete') || "ลบ"}
                                     >
                                         <TrashIcon className="w-4 h-4" />
                                     </button>
@@ -840,8 +842,8 @@ export default function ProfilePage() {
                         ))
                     ) : (
                         <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                            <p className="text-gray-500 mb-2">ยังไม่มีที่อยู่จัดส่ง</p>
-                            <p className="text-xs text-gray-400">เพิ่มที่อยู่เพื่อความรวดเร็วในการสั่งซื้อ</p>
+                            <p className="text-gray-500 mb-2">{t('noDeliveryAddressYet') || 'ยังไม่มีที่อยู่จัดส่ง'}</p>
+                            <p className="text-xs text-gray-400">{t('addAddressForFasterCheckout') || 'เพิ่มที่อยู่เพื่อความรวดเร็วในการสั่งซื้อ'}</p>
                         </div>
                     )}
                     
@@ -853,7 +855,7 @@ export default function ProfilePage() {
                         className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
                     >
                         <PlusIcon className="w-5 h-5" />
-                        เพิ่มที่อยู่ใหม่
+                        {t('addNewAddress') || 'เพิ่มที่อยู่ใหม่'}
                     </button>
                 </div>
             </div>
@@ -867,18 +869,18 @@ export default function ProfilePage() {
         isOpen={!!error}
         onClose={() => setError('')}
         type="error"
-        title="แจ้งเตือน!"
+        title={t('alertTitle') || "แจ้งเตือน!"}
         message={error}
-        buttonText="รับทราบ"
+        buttonText={t('acknowledge') || "รับทราบ"}
       />
 
       <Modal
         isOpen={!!success}
         onClose={() => setSuccess('')}
         type="success"
-        title="สำเร็จ!"
+        title={t('successTitle') || "สำเร็จ!"}
         message={success}
-        buttonText="ตกลง"
+        buttonText={t('ok') || "ตกลง"}
       />
 
       {/* Address Form Modal */}
@@ -897,9 +899,9 @@ export default function ProfilePage() {
             isOpen={!!addressToDelete}
             onClose={() => setAddressToDelete(null)}
             type="warning"
-            title="ลบที่อยู่"
-            message={`คุณต้องการลบที่อยู่ "${addressToDelete?.address_line}" ใช่หรือไม่?`}
-            buttonText="ลบข้อมูล"
+            title={t('deleteAddressTitle') || "ลบที่อยู่"}
+            message={t('confirmDeleteAddress', addressToDelete?.address_line) || `คุณต้องการลบที่อยู่ "${addressToDelete?.address_line}" ใช่หรือไม่?`}
+            buttonText={t('deleteData') || "ลบข้อมูล"}
             onConfirm={handleDeleteAddress}
             showCloseButton={true}
         />

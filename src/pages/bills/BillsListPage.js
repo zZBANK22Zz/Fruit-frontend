@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useLanguage } from "../../utils/LanguageContext";
 import liff from "@line/liff";
 import { 
   ArrowLeftIcon,
@@ -22,6 +23,7 @@ import ImageModal from "../../components/ImageModal";
 
 export default function BillsListPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,7 +53,7 @@ export default function BillsListPage() {
       setInvoices(orders);
     } catch (error) {
       console.error('Error loading invoices:', error);
-      setError('เกิดข้อผิดพลาดในการโหลดใบเสร็จ');
+      setError(t('errorLoadingInvoices') || 'เกิดข้อผิดพลาดในการโหลดใบเสร็จ');
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ export default function BillsListPage() {
       setSelectedOrder(detail);
     } catch (error) {
       console.error('Error fetching order details:', error);
-      alert('ไม่สามารถโหลดรายละเอียดออเดอร์ได้');
+      alert(t('errorLoadingOrderDetails') || 'ไม่สามารถโหลดรายละเอียดออเดอร์ได้');
     } finally {
       setIsDetailLoading(false);
     }
@@ -80,7 +82,7 @@ export default function BillsListPage() {
       const token = localStorage.getItem('token');
 
       if (!apiUrl || !token) {
-        alert('กรุณาเข้าสู่ระบบก่อนดาวน์โหลด');
+        alert(t('loginToDownload') || 'กรุณาเข้าสู่ระบบก่อนดาวน์โหลด');
         return;
       }
 
@@ -114,7 +116,7 @@ export default function BillsListPage() {
 
         if (response.ok) {
           const blob = await response.blob();
-          if (blob.size === 0) throw new Error('ไฟล์ PDF มีขนาดเป็น 0');
+          if (blob.size === 0) throw new Error(t('pdfSizeZero') || 'ไฟล์ PDF มีขนาดเป็น 0');
           
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -134,7 +136,7 @@ export default function BillsListPage() {
       }
     } catch (error) {
       console.error('Error downloading PDF:', error);
-      alert('เกิดข้อผิดพลาดในการดาวน์โหลด PDF: ' + error.message);
+      alert((t('errorDownloadingPdf') || 'เกิดข้อผิดพลาดในการดาวน์โหลด PDF: ') + error.message);
     } finally {
       setDownloadLoading(false);
     }
@@ -156,13 +158,13 @@ export default function BillsListPage() {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'paid': return 'ชำระเงินแล้ว';
-      case 'received': return 'รับออเดอร์แล้ว';
-      case 'preparing': return 'กำลังเตรียมสินค้า';
-      case 'completed': return 'เตรียมสินค้าเสร็จแล้ว';
-      case 'shipped': return 'จัดส่งแล้ว';
-      case 'confirmed': return 'ยืนยันแล้ว';
-      default: return status || 'รอดำเนินการ';
+      case 'paid': return t('statusPaid') || 'ชำระเงินแล้ว';
+      case 'received': return t('statusReceived') || 'รับออเดอร์แล้ว';
+      case 'preparing': return t('statusPreparing') || 'กำลังเตรียมสินค้า';
+      case 'completed': return t('statusCompleted') || 'เตรียมสินค้าเสร็จแล้ว';
+      case 'shipped': return t('statusShipped') || 'จัดส่งแล้ว';
+      case 'confirmed': return t('statusConfirmed') || 'ยืนยันแล้ว';
+      default: return status ? (t('statusPending') || 'รอดำเนินการ') : (t('statusPending') || 'รอดำเนินการ');
     }
   };
 
@@ -209,8 +211,8 @@ export default function BillsListPage() {
                 <DocumentTextIcon className="w-8 h-8 text-orange-500" />
             </div>
             <div>
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight">บิลของฉัน</h1>
-                <p className="text-gray-500 font-medium text-sm">ประวัติการสั่งซื้อความอร่อยทั้งหมด</p>
+                <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('myBills') || 'บิลของฉัน'}</h1>
+                <p className="text-gray-500 font-medium text-sm">{t('orderHistoryDesc') || 'ประวัติการสั่งซื้อความอร่อยทั้งหมด'}</p>
             </div>
         </div>
 
@@ -223,7 +225,7 @@ export default function BillsListPage() {
                 onClick={loadInvoices}
                 className="px-8 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all hover:-translate-y-1 shadow-lg"
               >
-                ลองอีกครั้ง
+                {t('tryAgain') || 'ลองอีกครั้ง'}
               </button>
             </div>
           ) : invoices.length === 0 ? (
@@ -231,13 +233,13 @@ export default function BillsListPage() {
               <div className="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center mb-6">
                 <ShoppingBagIcon className="w-10 h-10 text-orange-300" />
               </div>
-              <p className="text-2xl font-black text-gray-900 mb-2">ยังไม่มีใบเสร็จ</p>
-              <p className="text-gray-400 font-medium mb-8">เริ่มช้อปผลไม้สดๆ กันเถอะ!</p>
+              <p className="text-2xl font-black text-gray-900 mb-2">{t('noInvoicesYet') || 'ยังไม่มีใบเสร็จ'}</p>
+              <p className="text-gray-400 font-medium mb-8">{t('startShoppingFreshFruits') || 'เริ่มช้อปผลไม้สดๆ กันเถอะ!'}</p>
               <button
                 onClick={() => router.push('/')}
                 className="px-8 py-3 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-all hover:shadow-orange-200 hover:shadow-lg hover:-translate-y-1"
               >
-                ไปช้อปปิ้งเลย
+                {t('goShopping') || 'ไปช้อปปิ้งเลย'}
               </button>
             </div>
           ) : (
@@ -307,8 +309,8 @@ export default function BillsListPage() {
             {/* Modal Header */}
             <div className="bg-white px-8 py-6 border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
               <div>
-                <h2 className="text-2xl font-black text-gray-900 tracking-tight">ใบเสร็จรับเงิน</h2>
-                <p className="text-sm text-gray-500 font-medium">รายละเอียดธุรกรรมของคุณ</p>
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight">{t('receiptTitle') || 'ใบเสร็จรับเงิน'}</h2>
+                <p className="text-sm text-gray-500 font-medium">{t('transactionDetails') || 'รายละเอียดธุรกรรมของคุณ'}</p>
               </div>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -323,7 +325,7 @@ export default function BillsListPage() {
               {isDetailLoading ? (
                 <div className="py-20 flex flex-col items-center justify-center">
                   <OrangeSpinner className="w-12 h-12 mb-4" />
-                  <p className="text-gray-400 font-medium animate-pulse">กำลังแกะกล่องข้อมูล...</p>
+                  <p className="text-gray-400 font-medium animate-pulse">{t('unpackingData') || 'กำลังแกะกล่องข้อมูล...'}</p>
                 </div>
               ) : selectedOrder ? (
                 <div className="space-y-8 max-w-xl mx-auto">
@@ -335,7 +337,7 @@ export default function BillsListPage() {
                             <CheckBadgeIcon className="w-6 h-6" />
                         </div>
                         <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">สถานะการสั่งซื้อ</p>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('orderStatusTitle') || 'สถานะการสั่งซื้อ'}</p>
                             <p className="text-lg font-black text-gray-900">{getStatusLabel(selectedOrder.status)}</p>
                         </div>
                      </div>
@@ -346,14 +348,14 @@ export default function BillsListPage() {
                           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${downloadLoading ? 'bg-gray-100 text-gray-400' : 'bg-black text-white hover:bg-gray-800 hover:-translate-y-1 shadow-lg'}`}
                         >
                           <DocumentArrowDownIcon className={`w-4 h-4 ${downloadLoading ? 'animate-bounce' : ''}`} />
-                          {downloadLoading ? 'กำลังโหลด...' : 'ดาวน์โหลด PDF'}
+                          {downloadLoading ? (t('loading') || 'กำลังโหลด...') : (t('downloadPdf') || 'ดาวน์โหลด PDF')}
                         </button>
                      )}
                   </div>
 
                   {/* Items List */}
                   <div>
-                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 pl-2">รายการสินค้า</h3>
+                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 pl-2">{t('productListTitle') || 'รายการสินค้า'}</h3>
                     <div className="space-y-3">
                       {selectedOrder.items?.map((item, idx) => (
                         <div key={idx} className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-orange-200 transition-colors">
@@ -387,7 +389,7 @@ export default function BillsListPage() {
                             <div className="p-2 bg-white rounded-xl shadow-sm">
                                 <TruckIcon className="w-5 h-5 text-orange-500" />
                             </div>
-                            <h3 className="text-lg font-black text-gray-900">ข้อมูลการจัดส่ง</h3>
+                            <h3 className="text-lg font-black text-gray-900">{t('deliveryInfoTitle') || 'ข้อมูลการจัดส่ง'}</h3>
                         </div>
 
                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -403,11 +405,11 @@ export default function BillsListPage() {
                             )}
                             <div className="space-y-4 flex flex-col justify-center">
                                 <div>
-                                    <p className="text-xs font-bold text-orange-400 uppercase">จัดส่งเมื่อ</p>
+                                    <p className="text-xs font-bold text-orange-400 uppercase">{t('shippedOn') || 'จัดส่งเมื่อ'}</p>
                                     <p className="text-gray-900 font-bold">{formatDate(selectedOrder.delivery_confirmation.delivery_date)} เวลา {selectedOrder.delivery_confirmation.delivery_time?.slice(0, 5)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-orange-400 uppercase">ผู้รับ</p>
+                                    <p className="text-xs font-bold text-orange-400 uppercase">{t('receiver') || 'ผู้รับ'}</p>
                                     <p className="text-gray-900 font-bold">{selectedOrder.delivery_confirmation.receiver_name}</p>
                                 </div>
                                 <div className="pt-2 border-t border-orange-200">
@@ -421,21 +423,21 @@ export default function BillsListPage() {
                   {/* Summary & Slip */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                      <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">สรุปยอด</h3>
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">{t('summaryTitle') || 'สรุปยอด'}</h3>
                         <div className="space-y-3">
                              <div className="flex justify-between text-gray-500 font-medium">
-                                <span>ยอดรวม</span>
+                                <span>{t('subtotal') || 'ยอดรวม'}</span>
                                 <span>{parseFloat(selectedOrder.total_amount).toFixed(2)}</span>
                              </div>
                              <div className="flex justify-between text-xl font-black text-gray-900 pt-4 border-t border-gray-50">
-                                <span>รวมทั้งสิ้น</span>
+                                <span>{t('grandTotal') || 'รวมทั้งสิ้น'}</span>
                                 <span className="text-orange-500">{parseFloat(selectedOrder.total_amount).toFixed(2)}</span>
                              </div>
                         </div>
                      </div>
 
                      <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">หลักฐานโอนเงิน</h3>
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">{t('transferSlipTitle') || 'หลักฐานโอนเงิน'}</h3>
                         {selectedOrder.payment_slip ? (
                             <div className="rounded-xl overflow-hidden bg-gray-50 border border-gray-100 cursor-pointer hover:opacity-90 transition-opacity">
                                 <img 
@@ -448,7 +450,7 @@ export default function BillsListPage() {
                         ) : (
                             <div className="h-40 rounded-xl bg-gray-50 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200">
                                 <PhotoIcon className="w-8 h-8 mb-2" />
-                                <span className="text-xs font-bold">ไม่มีสลิป</span>
+                                <span className="text-xs font-bold">{t('noSlip') || 'ไม่มีสลิป'}</span>
                             </div>
                         )}
                      </div>
@@ -456,7 +458,7 @@ export default function BillsListPage() {
 
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">ไม่พบข้อมูล</div>
+                <div className="text-center py-12 text-gray-500">{t('noDataFound') || 'ไม่พบข้อมูล'}</div>
               )}
             </div>
 

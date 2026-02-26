@@ -11,7 +11,8 @@ import {
   InformationCircleIcon,
   ExclamationTriangleIcon,
   PlusCircleIcon,
-  HomeIcon
+  HomeIcon,
+  GlobeAltIcon
 } from "@heroicons/react/24/outline";
 import { getCartItemCount } from "../utils/cartUtils";
 import { 
@@ -22,9 +23,11 @@ import {
   removeNotification 
 } from "../utils/notificationUtils";
 import { handleTokenExpiration } from "../utils/authUtils";
+import { useLanguage } from "../utils/LanguageContext";
 
 export default function Navbar({ showBackButton = false }) {
   const router = useRouter();
+  const { lang, toggleLang, t } = useLanguage();
   const [greeting, setGreeting] = useState("");
   const [userName, setUserName] = useState("");
   const [userData, setUserData] = useState(null);
@@ -40,18 +43,14 @@ export default function Navbar({ showBackButton = false }) {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // First, try to get user data from localStorage
         const storedUser = localStorage.getItem('user');
         const token = localStorage.getItem('token');
 
         if (storedUser) {
           const user = JSON.parse(storedUser);
           setUserData(user);
-          // Use first_name and last_name if available, otherwise use username
-          const displayName = user.username;
-          setUserName(displayName);
+          setUserName(user.username);
         } else if (token) {
-          // If token exists but no user data, fetch from API
           const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
           if (apiUrl) {
             const response = await fetch(`${apiUrl}/api/users/profile`, {
@@ -70,53 +69,50 @@ export default function Navbar({ showBackButton = false }) {
                 localStorage.setItem('user', JSON.stringify(user));
                 const displayName = user.first_name && user.last_name 
                   ? `${user.first_name} ${user.last_name}`
-                  : user.username || 'ผู้ใช้';
+                  : user.username || t('defaultUser');
                 setUserName(displayName);
               }
             } else if (response.status === 401) {
-              // Unauthorized - token expired or invalid
               handleTokenExpiration(true, router.push);
-              setUserName('ผู้ใช้');
+              setUserName(t('defaultUser'));
             } else {
-              // Token might be invalid, clear it (don't show warning for other errors)
               handleTokenExpiration(false);
-              setUserName('ผู้ใช้');
+              setUserName(t('defaultUser'));
             }
           }
         } else {
-          // No user logged in
-          setUserName('ผู้ใช้');
+          setUserName(t('defaultUser'));
         }
       } catch (error) {
         console.error('Error loading user data:', error);
-        setUserName('ผู้ใช้');
+        setUserName(t('defaultUser'));
       }
     };
 
     loadUserData();
   }, []);
 
+  // Update greeting when language or time changes
   useEffect(() => {
     const getGreeting = () => {
       const hour = new Date().getHours();
       if (hour >= 5 && hour < 12) {
-        return "สวัสดีตอนเช้า"; // Good morning
+        return t('greetingMorning');
       } else if (hour >= 12 && hour < 18) {
-        return "สวัสดีตอนบ่าย"; // Good afternoon
+        return t('greetingAfternoon');
       } else {
-        return "สวัสดีตอนเย็น"; // Good evening
+        return t('greetingEvening');
       }
     };
     
     setGreeting(getGreeting());
     
-    // Update greeting every minute (optional)
     const interval = setInterval(() => {
       setGreeting(getGreeting());
     }, 60000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [lang]); // re-run when language changes
 
   // Update cart item count
   useEffect(() => {
@@ -125,16 +121,9 @@ export default function Navbar({ showBackButton = false }) {
       setCartItemCount(count);
     };
 
-    // Initial load
     updateCartCount();
-
-    // Update cart count periodically to reflect changes from other tabs/components
     const cartInterval = setInterval(updateCartCount, 500);
-
-    // Also update when window gains focus (user switches back to tab)
-    const handleFocus = () => {
-      updateCartCount();
-    };
+    const handleFocus = () => updateCartCount();
     window.addEventListener('focus', handleFocus);
 
     return () => {
@@ -143,7 +132,7 @@ export default function Navbar({ showBackButton = false }) {
     };
   }, []);
 
-  // Listen for user data updates (e.g., when profile image is updated)
+  // Listen for user data updates
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'user') {
@@ -153,7 +142,7 @@ export default function Navbar({ showBackButton = false }) {
             setUserData(updatedUser);
             const displayName = updatedUser.first_name && updatedUser.last_name 
               ? `${updatedUser.first_name} ${updatedUser.last_name}`
-              : updatedUser.username || 'ผู้ใช้';
+              : updatedUser.username || t('defaultUser');
             setUserName(displayName);
           }
         } catch (error) {
@@ -162,10 +151,8 @@ export default function Navbar({ showBackButton = false }) {
       }
     };
 
-    // Listen for storage events (updates from other tabs/components)
     window.addEventListener('storage', handleStorageChange);
 
-    // Also check localStorage periodically for same-tab updates
     const checkUserData = setInterval(() => {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -175,7 +162,7 @@ export default function Navbar({ showBackButton = false }) {
             setUserData(user);
             const displayName = user.first_name && user.last_name 
               ? `${user.first_name} ${user.last_name}`
-              : user.username || 'ผู้ใช้';
+              : user.username || t('defaultUser');
             setUserName(displayName);
           }
         } catch (error) {
@@ -198,16 +185,10 @@ export default function Navbar({ showBackButton = false }) {
       setUnreadCount(data.unread_count);
     };
 
-    // Initial load
     updateNotifications();
 
-    // Listen for notification updates
-    const handleNotificationUpdate = () => {
-      updateNotifications();
-    };
+    const handleNotificationUpdate = () => updateNotifications();
     window.addEventListener('notificationsUpdated', handleNotificationUpdate);
-
-    // Polling every 30 seconds for real-time experience
     const interval = setInterval(updateNotifications, 30000);
 
     return () => {
@@ -235,7 +216,6 @@ export default function Navbar({ showBackButton = false }) {
 
   const handleNotificationClick = async (notificationId) => {
     await markAsRead(notificationId);
-    // After marking as read, refresh notifications
     const data = await getNotifications();
     setNotifications(data.notifications);
     setUnreadCount(data.unread_count);
@@ -243,7 +223,6 @@ export default function Navbar({ showBackButton = false }) {
 
   const handleMarkAllAsRead = async () => {
     await markAllAsRead();
-    // Refresh notifications
     const data = await getNotifications();
     setNotifications(data.notifications);
     setUnreadCount(data.unread_count);
@@ -252,7 +231,6 @@ export default function Navbar({ showBackButton = false }) {
   const handleRemoveNotification = async (notificationId, e) => {
     e.stopPropagation();
     await removeNotification(notificationId);
-    // Refresh notifications after removal
     const data = await getNotifications();
     setNotifications(data.notifications);
     setUnreadCount(data.unread_count);
@@ -282,11 +260,11 @@ export default function Navbar({ showBackButton = false }) {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'เมื่อสักครู่';
-    if (diffMins < 60) return `${diffMins} นาทีที่แล้ว`;
-    if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`;
-    if (diffDays < 7) return `${diffDays} วันที่แล้ว`;
-    return date.toLocaleDateString('th-TH');
+    if (diffMins < 1) return t('justNow');
+    if (diffMins < 60) return t('minutesAgo', diffMins);
+    if (diffHours < 24) return t('hoursAgo', diffHours);
+    if (diffDays < 7) return t('daysAgo', diffDays);
+    return date.toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-GB');
   };
 
   // Close dropdown when clicking outside
@@ -306,7 +284,6 @@ export default function Navbar({ showBackButton = false }) {
     };
   }, [showDropdown]);
 
-  // Handle dropdown menu actions
   const handleProfileClick = () => {
     setShowDropdown(false);
     router.push('/profile');
@@ -323,20 +300,16 @@ export default function Navbar({ showBackButton = false }) {
   };
 
   const handleLogout = () => {
-    // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('cart');
     
-    // Reset state
     setUserData(null);
-    setUserName('ผู้ใช้');
+    setUserName(t('defaultUser'));
     setShowDropdown(false);
     
-    // Redirect to login page
     router.push('/registration/LoginPage');
 
-    // line liff logout
     import('@line/liff').then((liff) => {
       if (liff.default.isLoggedIn()) {
         liff.default.logout();
@@ -371,7 +344,6 @@ export default function Navbar({ showBackButton = false }) {
                   alt={userName}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    // Fallback to icon if image fails to load
                     e.target.style.display = 'none';
                     const icon = e.target.parentElement.querySelector('.user-icon-fallback');
                     if (icon) icon.style.display = 'block';
@@ -393,7 +365,7 @@ export default function Navbar({ showBackButton = false }) {
                   <div className="p-2 rounded-lg bg-gray-100 group-hover:bg-orange-100 transition-colors">
                     <UserIcon className="w-5 h-5 text-gray-600 group-hover:text-orange-600" />
                   </div>
-                  <span className="group-hover:text-orange-600 transition-colors">โปรไฟล์</span>
+                  <span className="group-hover:text-orange-600 transition-colors">{t('profile')}</span>
                 </button>
                 <button
                   onClick={handleHistoryClick}
@@ -404,9 +376,9 @@ export default function Navbar({ showBackButton = false }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <span className="group-hover:text-orange-600 transition-colors">ประวัติการสั่งซื้อ</span>
+                  <span className="group-hover:text-orange-600 transition-colors">{t('orderHistory')}</span>
                 </button>
-                {/* Admin Only: Add Product Option */}
+                {/* Admin Only */}
                 {userData?.role === 'admin' && (
                   <>
                     <button
@@ -419,7 +391,7 @@ export default function Navbar({ showBackButton = false }) {
                       <div className="p-2 rounded-lg bg-orange-100 group-hover:bg-orange-200 transition-colors">
                         <ShoppingCartIcon className="w-5 h-5 text-orange-600" />
                       </div>
-                      <span className="group-hover:text-orange-700 transition-colors">จัดการออเดอร์</span>
+                      <span className="group-hover:text-orange-700 transition-colors">{t('manageOrders')}</span>
                     </button>
                     <button
                       onClick={handleAddProductClick}
@@ -428,7 +400,7 @@ export default function Navbar({ showBackButton = false }) {
                       <div className="p-2 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
                         <PlusCircleIcon className="w-5 h-5 text-blue-600" />
                       </div>
-                      <span className="group-hover:text-blue-700 transition-colors">จัดการสินค้า</span>
+                      <span className="group-hover:text-blue-700 transition-colors">{t('manageProducts')}</span>
                     </button>
                   </>
                 )}
@@ -442,7 +414,7 @@ export default function Navbar({ showBackButton = false }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                   </div>
-                  <span className="group-hover:text-red-700 transition-colors">ออกจากระบบ</span>
+                  <span className="group-hover:text-red-700 transition-colors">{t('logout')}</span>
                 </button>
               </div>
             )}
@@ -455,8 +427,6 @@ export default function Navbar({ showBackButton = false }) {
           >
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors flex items-center gap-1">
               {userName}
-              {/* <span className="text-xs font-normal text-gray-400">|</span>
-              <span className="text-sm font-medium text-gray-600 group-hover:text-orange-500">{userName}</span> */}
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 font-medium group-hover:text-orange-400 transition-colors">{greeting}</p>
           </div>
@@ -468,12 +438,35 @@ export default function Navbar({ showBackButton = false }) {
           <button 
             onClick={() => router.push('/')}
             className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all duration-300 transform hover:scale-110 active:scale-95"
-            title="หน้าแรก"
+            title={t('home')}
           >
             <HomeIcon className="w-6 h-6 sm:w-7 sm:h-7" />
           </button>
 
-            {/* Notification Bell Icon */}
+          {/* Language Toggle Button */}
+          <motion.button
+            onClick={toggleLang}
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.08 }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border-2 border-orange-200 bg-orange-50 hover:bg-orange-100 hover:border-orange-400 transition-all duration-200 shadow-sm"
+            title={lang === 'th' ? 'Switch to English' : 'เปลี่ยนเป็นภาษาไทย'}
+          >
+            {/* <GlobeAltIcon className="w-4 h-4 text-orange-500 flex-shrink-0" /> */}
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={lang}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.15 }}
+                className="text-xs font-bold text-orange-600 min-w-[40px] text-center"
+              >
+                {lang === 'th' ? '🇹🇭 TH' : '🇬🇧 EN'}
+              </motion.span>
+            </AnimatePresence>
+          </motion.button>
+
+          {/* Notification Bell Icon */}
           <div className="relative" ref={notificationDropdownRef}>
             <button 
               onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
@@ -518,14 +511,14 @@ export default function Navbar({ showBackButton = false }) {
                     <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 backdrop-blur-sm">
                       <div className="flex items-center gap-2">
                         <BellIcon className="w-5 h-5 text-orange-500" />
-                        <h3 className="font-bold text-gray-900 text-sm">การแจ้งเตือน</h3>
+                        <h3 className="font-bold text-gray-900 text-sm">{t('notifications')}</h3>
                       </div>
                       {unreadCount > 0 && (
                         <button
                           onClick={handleMarkAllAsRead}
                           className="text-xs text-orange-600 hover:text-orange-700 font-medium hover:underline underline-offset-2 transition-all"
                         >
-                          อ่านทั้งหมด
+                          {t('markAllRead')}
                         </button>
                       )}
                     </div>
@@ -537,8 +530,8 @@ export default function Navbar({ showBackButton = false }) {
                           <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
                               <BellIcon className="w-8 h-8 text-gray-300" />
                           </div>
-                          <p className="text-gray-500 font-medium text-sm">ไม่มีการแจ้งเตือนใหม่</p>
-                          <p className="text-gray-400 text-xs mt-1">เราจะแจ้งให้คุณทราบเมื่อมีการอัปเดต</p>
+                          <p className="text-gray-500 font-medium text-sm">{t('noNotifications')}</p>
+                          <p className="text-gray-400 text-xs mt-1">{t('notifyWhenUpdate')}</p>
                         </div>
                       ) : (
                         <div className="divide-y divide-gray-50">

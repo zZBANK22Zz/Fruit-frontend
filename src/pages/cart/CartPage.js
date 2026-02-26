@@ -16,9 +16,11 @@ import AddressForm from "../../components/AddressForm";
 import { getCart, removeFromCart, updateCartItemQuantity, getCartTotal, clearCart } from "../../utils/cartUtils";
 import { notifySuccess } from "../../utils/notificationUtils";
 import { handleTokenExpiration, fetchWithAuth } from "../../utils/authUtils";
+import { useLanguage } from "../../utils/LanguageContext";
 
 export default function CartPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addresses, setAddresses] = useState([]);
@@ -133,39 +135,38 @@ export default function CartPage() {
         if (response && response.ok) {
             await loadAddresses(); // Reload list
             setShowAddressForm(false);
-            notifySuccess('เพิ่มที่อยู่สำเร็จ');
+            notifySuccess(t('addressSaved'));
         } else {
-             alert('เพิ่มที่อยู่ไม่สำเร็จ');
+             alert(t('addressSaveFailed'));
         }
       } catch (error) {
           console.error('Error saving address:', error);
-          alert('เกิดข้อผิดพลาด');
+          alert(t('errorOccurred'));
       }
   };
 
-  const handleRemoveItem = (productId) => {
-    removeFromCart(productId);
+  const handleRemoveItem = (item) => {
+    removeFromCart(item.cartKey || item.id);
     loadCart();
   };
 
-  const handleUpdateQuantity = (productId, newQuantity) => {
+  const handleUpdateQuantity = (item, newQuantity) => {
+    const key = item.cartKey || item.id;
     if (newQuantity < 1) {
-      handleRemoveItem(productId);
+      handleRemoveItem(item);
       return;
     }
-    // For fruits sold by piece, ensure quantity is an integer
-    const cart = getCart();
-    const item = cart.find(i => i.id === productId);
-    if (item && item.unit === 'piece') {
+    // For fruits sold by piece or bunch, ensure quantity is an integer
+    if (item.unit === 'piece' || item.unit === 'bunch') {
       newQuantity = Math.floor(newQuantity);
     }
-    updateCartItemQuantity(productId, newQuantity);
+    updateCartItemQuantity(key, newQuantity);
     loadCart();
   };
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
-      alert('กรุณาเพิ่มสินค้าลงตะกร้าก่อน');
+      alert(t('cartEmptyAlert'));
       return;
     }
 
@@ -174,18 +175,18 @@ export default function CartPage() {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        alert('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อ');
+        alert(t('loginRequired'));
         router.push('/registration/LoginPage');
         return;
       }
 
       if (!apiUrl) {
-        alert('ไม่พบการตั้งค่า API');
+        alert(t('apiNotConfigured'));
         return;
       }
 
       if (!selectedAddressId) {
-        alert('กรุณาเลือกที่อยู่จัดส่ง');
+        alert(t('selectDeliveryAddress'));
         return;
       }
 
@@ -228,8 +229,8 @@ export default function CartPage() {
           const totalAmount = data.data.order.total_amount || getCartTotal();
           
           notifySuccess(
-            'สั่งซื้อสำเร็จ',
-            `ออเดอร์ #${orderId} สร้างเรียบร้อยแล้ว`
+            t('orderSuccess'),
+            t('orderCreated', orderId)
           );
           
           clearCart();
@@ -237,12 +238,12 @@ export default function CartPage() {
         }
       } else {
         const errorData = await response.json();
-        alert(errorData.message || 'เกิดข้อผิดพลาดในการสร้างออเดอร์');
+        alert(errorData.message || t('orderError'));
       }
     } catch (error) {
       if (!error.message.includes('expired') && !error.message.includes('token')) {
         console.error('Error creating order:', error);
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
+        alert(t('connectionError', error.message));
       }
     }
   };
@@ -271,7 +272,7 @@ export default function CartPage() {
             <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
           </button>
           
-          <h1 className="text-lg font-black text-gray-900">ตะกร้าของฉัน ({cartItems.length})</h1>
+          <h1 className="text-lg font-black text-gray-900">{t('myCart', cartItems.length)}</h1>
           
           <button
             onClick={() => router.push('/')}
@@ -300,13 +301,13 @@ export default function CartPage() {
                    <span className="text-2xl">🍊</span>
                 </div>
               </div>
-              <h2 className="text-2xl font-black text-gray-900 mb-2">ตะกร้าว่างเปล่า</h2>
-              <p className="text-gray-500 mb-8 max-w-xs mx-auto">ยังไม่มีผลไม้ในตะกร้า ลองกลับไปเลือกซื้อผลไม้สดๆ จากสวนของเราดูไหมครับ?</p>
+              <h2 className="text-2xl font-black text-gray-900 mb-2">{t('cartEmpty')}</h2>
+              <p className="text-gray-500 mb-8 max-w-xs mx-auto">{t('cartEmptyDesc')}</p>
               <button
                 onClick={() => router.push('/')}
                 className="px-8 py-4 bg-gray-900 text-white font-bold rounded-2xl shadow-lg shadow-gray-200 hover:bg-black hover:shadow-xl transition-all active:scale-95 flex items-center gap-2"
               >
-                <span>ไปเลือกซื้อสินค้า</span>
+                <span>{t('goShopping')}</span>
                 <ArrowLeftIcon className="w-5 h-5 rotate-180" />
               </button>
             </motion.div>
@@ -348,14 +349,14 @@ export default function CartPage() {
                             {item.name}
                           </h3>
                           <button
-                            onClick={() => handleRemoveItem(item.id)}
+                            onClick={() => handleRemoveItem(item)}
                             className="absolute top-4 right-4 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-90"
                           >
                             <TrashIcon className="w-5 h-5" />
                           </button>
                         </div>
                         <p className="text-xs font-medium text-gray-500 bg-gray-100 w-fit px-2 py-1 rounded-lg">
-                          ราคาต่อหน่วย: {item.price} บาท/{item.unit === 'piece' ? 'ลูก' : 'กก.'}
+                          {t('pricePerUnit')}: {item.price} {t('baht')}/{item.selected_label || (item.unit === 'piece' ? t('perPiece') : item.unit === 'bunch' ? t('perBunch') : t('perKg'))}
                         </p>
                       </div>
 
@@ -363,16 +364,19 @@ export default function CartPage() {
                         {/* Quantity Controls */}
                         <div className="flex items-center bg-gray-50 rounded-xl p-1 shadow-inner">
                           <button
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity - (item.unit === 'piece' ? 1 : 0.5))}
+                            onClick={() => handleUpdateQuantity(item, item.quantity - (item.unit === 'kg' ? 0.5 : 1))}
                             className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-600 hover:text-orange-600 transition-all active:scale-90 disabled:opacity-50"
                           >
                             <MinusIcon className="w-4 h-4 stroke-[3]" />
                           </button>
                           <div className="min-w-[3rem] text-center font-bold text-sm">
-                            {item.unit === 'piece' ? item.quantity : item.quantity.toFixed(1)} <span className="text-[10px] text-gray-400 font-normal">{item.unit === 'piece' ? 'ลูก' : 'กก.'}</span>
+                            {item.unit === 'kg' ? item.quantity.toFixed(1) : item.quantity}{' '}
+                            <span className="text-[10px] text-gray-400 font-normal">
+                              {item.selected_label || (item.unit === 'piece' ? t('perPiece') : item.unit === 'bunch' ? t('perBunch') : t('perKg'))}
+                            </span>
                           </div>
                           <button
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity + (item.unit === 'piece' ? 1 : 0.5))}
+                            onClick={() => handleUpdateQuantity(item, item.quantity + (item.unit === 'kg' ? 0.5 : 1))}
                             className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-600 hover:text-green-600 transition-all active:scale-90"
                           >
                             <PlusIcon className="w-4 h-4 stroke-[3]" />
@@ -404,25 +408,25 @@ export default function CartPage() {
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-gray-900 flex items-center gap-2">
                         <MapPinIcon className="w-5 h-5 text-orange-500" />
-                        ที่อยู่จัดส่ง
+                        {t('deliveryAddress')}
                     </h3>
                     <button 
                         onClick={() => setShowAddressForm(true)}
                         className="text-sm text-orange-600 font-medium hover:underline flex items-center gap-1"
                     >
                         <PlusIcon className="w-4 h-4" />
-                        เพิ่มที่อยู่ใหม่
+                        {t('addNewAddress')}
                     </button>
                 </div>
                 
                 {addresses.length === 0 ? (
                     <div className="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                        <p className="text-gray-500 mb-3">คุณยังไม่มีที่อยู่จัดส่ง</p>
+                        <p className="text-gray-500 mb-3">{t('noAddressYet')}</p>
                         <button 
                             onClick={() => setShowAddressForm(true)}
                             className="bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:border-orange-500 hover:text-orange-500 transition-colors"
                         >
-                            เพิ่มที่อยู่จัดส่ง
+                            {t('addDeliveryAddress')}
                         </button>
                     </div>
                 ) : (
@@ -472,17 +476,17 @@ export default function CartPage() {
           >
             <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
               <ShoppingBagIcon className="w-5 h-5 text-orange-500" />
-              สรุปคำสั่งซื้อ
+              {t('orderSummary')}
             </h3>
             <div className="space-y-3 text-sm">
                <div className="flex justify-between text-gray-600">
-                  <span>ยอดรวมสินค้า</span>
+                  <span>{t('subtotal')}</span>
                   <span className="font-bold">฿{totalAmount.toFixed(2)}</span>
                </div>
                <div className="flex justify-between text-gray-600">
-                  <span>ค่าจัดส่ง</span>
+                  <span>{t('shippingFee')}</span>
                   {SHIPPING_COST === 0 ? (
-                    <span className="font-bold text-green-600">ฟรี</span>
+                    <span className="font-bold text-green-600">{t('freeShipping')}</span>
                   ) : (
                     <span className="font-bold">฿{SHIPPING_COST.toFixed(2)}</span>
                   )}
@@ -490,11 +494,11 @@ export default function CartPage() {
                {totalAmount < 500 && (
                  <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-50 px-3 py-2 rounded-xl">
                     <CheckBadgeIcon className="w-4 h-4" />
-                    <span>ซื้อครบ 500 บาท จัดส่งฟรี! (ขาดอีก ฿{(500 - totalAmount).toFixed(2)})</span>
+                    <span>{t('freeShippingHint', (500 - totalAmount).toFixed(2))}</span>
                  </div>
                )}
                <div className="border-t border-dashed border-gray-200 pt-3 flex justify-between items-end">
-                  <span className="font-bold text-gray-900">ยอดชำระทั้งหมด</span>
+                  <span className="font-bold text-gray-900">{t('totalPayable')}</span>
                   <span className="text-2xl font-black bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
                     ฿{(totalAmount + SHIPPING_COST).toFixed(2)}
                   </span>
@@ -509,14 +513,14 @@ export default function CartPage() {
         <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-200 p-4 pb-8 z-30 shadow-2xl safe-area-bottom">
           <div className="max-w-3xl mx-auto flex gap-4 items-center">
              <div className="flex-1">
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">ยอดที่ต้องชำระ</p>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{t('amountDue')}</p>
                 <p className="text-xl font-black text-gray-900">฿{(totalAmount + SHIPPING_COST).toFixed(2)}</p>
              </div>
              <button
                 onClick={handleCheckout}
                 className="flex-[2] bg-gray-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 group"
              >
-                <span>ชำระเงิน</span>
+                <span>{t('checkout')}</span>
                 <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform">
                    <ArrowLeftIcon className="w-3 h-3 rotate-180" />
                 </div>

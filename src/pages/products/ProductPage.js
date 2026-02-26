@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLanguage } from "../../utils/LanguageContext";
 import { useRouter } from "next/router";
 import Card from "../../components/Card";
 import Navbar from "../../components/Navbar";
@@ -14,6 +15,7 @@ export default function ProductPage() {
   const [fruits, setFruits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { t } = useLanguage();
 
   // Fetch fruits filtered by category
   useEffect(() => {
@@ -79,7 +81,7 @@ export default function ProductPage() {
             <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
             <input
               type="text"
-              placeholder="ค้นหาสินค้า..."
+              placeholder={t('searchProducts') || "ค้นหาสินค้า..."}
               className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 text-sm sm:text-base transition-all duration-300 bg-white shadow-sm hover:shadow-md"
             />
           </div>
@@ -96,7 +98,7 @@ export default function ProductPage() {
         <div className="flex items-center gap-3 mb-3">
           <span className="w-1 h-8 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">
-            {category ? category : 'สินค้าทั้งหมด'}
+            {category ? category : t('allProducts')}
           </h2>
         </div>
         {category && (
@@ -104,11 +106,11 @@ export default function ProductPage() {
             {loading ? (
                 <span className="inline-flex items-center gap-2">
                   <OrangeSpinner className="h-4 w-4" />
-                  กำลังโหลด...
+                  {t('loading')}
                 </span>
             ) : (
               <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-                {fruits.length} รายการ
+                {fruits.length} {t('items')}
               </span>
             )}
           </p>
@@ -133,19 +135,19 @@ export default function ProductPage() {
               onClick={() => router.reload()}
               className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
-              ลองอีกครั้ง
+              {t('tryAgain')}
             </button>
           </div>
         ) : fruits.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg mb-4">
-              ไม่พบสินค้าในหมวดหมู่นี้
+              {t('noProductsInCategory') || "ไม่พบสินค้าในหมวดหมู่นี้"}
             </p>
             <button
               onClick={() => router.push('/')}
               className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
-              กลับหน้าหลัก
+              {t('backToHome')}
             </button>
           </div>
         ) : (

@@ -11,9 +11,11 @@ import {
     SparklesIcon
 } from "@heroicons/react/24/outline";
 import Modal from "../../components/Modal";
+import { useLanguage } from "../../utils/LanguageContext";
 
 const RegisterPage = () => {
     const router = useRouter();
+    const { t } = useLanguage();
 
     const [userdata, setUserdata] = useState({
         firstname: '',
@@ -61,7 +63,7 @@ const RegisterPage = () => {
                 throw new Error(data.message || 'การลงทะเบียนล้มเหลว');
             }
 
-            setSuccess('ยินดีต้อนรับสู่ครอบครัวคนรักผลไม้! 🍊');
+            setSuccess(t('registerSuccess'));
             
             setTimeout(() => {
                 router.push('/registration/LoginPage');
@@ -131,7 +133,7 @@ const RegisterPage = () => {
                     className="group flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-md rounded-full text-gray-600 font-medium shadow-sm hover:shadow-md transition-all hover:bg-white"
                 >
                     <ArrowLeftIcon className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                    <span>กลับ</span>
+                    <span>{t('backButton')}</span>
                 </button>
             </div>
 
@@ -155,7 +157,7 @@ const RegisterPage = () => {
                          </div>
                          <h2 className="text-4xl font-black mb-4 tracking-tight">Fruit Family</h2>
                          <p className="text-orange-100 text-lg font-medium leading-relaxed">
-                             เข้าร่วมกับเราวันนี้ เพื่อรับสิทธิพิเศษและผลไม้สดใหม่ส่งตรงถึงหน้าบ้านคุณ
+                             {t('brandTagline')}
                          </p>
                     </motion.div>
                 </div>
@@ -169,15 +171,15 @@ const RegisterPage = () => {
                             transition={{ delay: 0.3 }}
                         >
                             <h1 className="text-3xl font-black text-gray-900 mb-2 flex items-center gap-3">
-                                สมัครสมาชิก <SparklesIcon className="w-8 h-8 text-yellow-400" />
+                                {t('registerTitle')} <SparklesIcon className="w-8 h-8 text-yellow-400" />
                             </h1>
-                            <p className="text-gray-500 mb-8">กรอกข้อมูลเพื่อเริ่มต้นการใช้งาน</p>
+                            <p className="text-gray-500 mb-8">{t('registerSubtitle')}</p>
                         </motion.div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <InputField 
-                                    label="ชื่อจริง"
+                                    label={t('firstName')}
                                     name="firstname"
                                     icon={UserIcon}
                                     value={userdata.firstname}
@@ -186,7 +188,7 @@ const RegisterPage = () => {
                                     setActiveField={setActiveField}
                                 />
                                 <InputField 
-                                    label="นามสกุล"
+                                    label={t('lastName')}
                                     name="lastname"
                                     icon={UserIcon}
                                     value={userdata.lastname}
@@ -197,7 +199,7 @@ const RegisterPage = () => {
                             </div>
 
                             <InputField 
-                                label="ชื่อผู้ใช้"
+                                label={t('username')}
                                 name="username"
                                 icon={UserIcon}
                                 value={userdata.username}
@@ -207,7 +209,7 @@ const RegisterPage = () => {
                             />
 
                             <InputField 
-                                label="อีเมล"
+                                label={t('email')}
                                 name="email"
                                 type="email"
                                 icon={EnvelopeIcon}
@@ -219,7 +221,7 @@ const RegisterPage = () => {
 
                             <div>
                                 <InputField 
-                                    label="รหัสผ่าน"
+                                    label={t('passwordLabel')}
                                     name="password"
                                     type="password"
                                     icon={LockClosedIcon}
@@ -253,11 +255,11 @@ const RegisterPage = () => {
                                             <div className="flex gap-4 text-xs font-medium text-gray-500">
                                                 <div className={`flex items-center gap-1 ${isLengthValid ? 'text-green-600' : ''}`}>
                                                     {isLengthValid ? <CheckCircleIcon className="w-4 h-4"/> : <div className="w-4 h-4 rounded-full border border-gray-300"/>}
-                                                    8+ ตัวอักษร
+                                                    {t('passwordMin8')}
                                                 </div>
                                                 <div className={`flex items-center gap-1 ${hasNoSpaces ? 'text-green-600' : ''}`}>
                                                     {hasNoSpaces ? <CheckCircleIcon className="w-4 h-4"/> : <div className="w-4 h-4 rounded-full border border-gray-300"/>}
-                                                    ไม่มีช่องว่าง
+                                                    {t('noSpaces')}
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -277,10 +279,10 @@ const RegisterPage = () => {
                                 {isLoading ? (
                                     <div className="flex items-center justify-center gap-2">
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        <span>กำลังสมัครสมาชิก...</span>
+                                        <span>{t('registering')}</span>
                                     </div>
                                 ) : (
-                                    'ลงทะเบียน'
+                                    t('registerButton')
                                 )}
                             </motion.button>
                         </form>
@@ -293,9 +295,9 @@ const RegisterPage = () => {
                 isOpen={!!error}
                 onClose={() => setError('')}
                 type="error"
-                title="เกิดข้อผิดพลาด"
+                title={t('errorTitle')}
                 message={error}
-                buttonText="ลองใหม่"
+                buttonText={t('tryAgain')}
             />
 
             {/* Success Modal */}
@@ -306,9 +308,9 @@ const RegisterPage = () => {
                     router.push('/registration/LoginPage');
                 }}
                 type="success"
-                title="สำเร็จ!"
+                title={t('successTitle')}
                 message={success}
-                buttonText="ไปหน้าเข้าสู่ระบบ"
+                buttonText={t('goToLogin')}
             />
         </div>
     );

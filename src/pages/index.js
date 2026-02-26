@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
+import { useLanguage } from "../utils/LanguageContext";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion";
 import { Search, ShoppingBag, ChevronRight, ChevronLeft, Filter, Sparkles, Star, Zap } from "lucide-react";
 import Card from "../components/Card";
@@ -71,7 +72,7 @@ function TiltHero({ image, active }) {
          >
             <div className="flex items-center gap-2 mb-2 text-orange-300">
               <Sparkles className="w-5 h-5 fill-current animate-pulse" />
-              <span className="text-sm font-bold tracking-widest uppercase">คุณภาพเกรดพรีเมียม</span>
+              <span className="text-sm font-bold tracking-widest uppercase">{t('premiumQuality') || "คุณภาพเกรดพรีเมียม"}</span>
             </div>
             <h2 className="text-4xl md:text-6xl font-black text-white leading-tight drop-shadow-lg">
               สดใหม่ & <br/>
@@ -85,9 +86,10 @@ function TiltHero({ image, active }) {
 
 export default function Home() {
   const router = useRouter();
-  const [categories, setCategories] = useState(["ทั้งหมด"]);
+  const { t } = useLanguage();
+  const [categories, setCategories] = useState([t('all') || "ทั้งหมด"]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("ทั้งหมด");
+  const [selectedCategory, setSelectedCategory] = useState(t('all') || "ทั้งหมด");
   const [currentSlide, setCurrentSlide] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("");
@@ -131,16 +133,16 @@ export default function Home() {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND;
         if (!apiUrl) {
-          setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]);
+          setCategories([t('all') || "ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]);
           setCategoriesLoading(false); return;
         }
         const response = await fetch(`${apiUrl}/api/categories`);
         if (response.ok) {
           const data = await response.json();
-          if (data.data?.categories) setCategories(["ทั้งหมด", ...data.data.categories.map(c => c.name)]);
-          else setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]);
-        } else setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]);
-      } catch (e) { setCategories(["ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]); }
+          if (data.data?.categories) setCategories([t('all') || "ทั้งหมด", ...data.data.categories.map(c => c.name)]);
+          else setCategories([t('all') || "ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]);
+        } else setCategories([t('all') || "ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]);
+      } catch (e) { setCategories([t('all') || "ทั้งหมด", "กล้วย", "แตงโม", "ส้ม", "มะละกอ", "สับปะรด", "แก้วมังกร"]); }
       finally { setCategoriesLoading(false); }
     };
     loadCategories();
@@ -215,7 +217,7 @@ export default function Home() {
 
   useEffect(() => {
     let filtered = products;
-    if (selectedCategoryFilter && selectedCategoryFilter !== "ทั้งหมด") {
+    if (selectedCategoryFilter && selectedCategoryFilter !== (t('all') || "ทั้งหมด")) {
       filtered = filtered.filter(p => p.category_name === selectedCategoryFilter);
     }
     if (searchQuery.trim() !== "") {
@@ -264,11 +266,7 @@ export default function Home() {
                 {[...Array(10)].map((_, i) => (
                     <span key={i} className="flex items-center gap-4 mr-8">
                         <Sparkles className="w-4 h-4 text-orange-400" />
-                        🍎 ผลไม้เกรดพรีเมียม ส่งตรงจากสวน 🚜
-                        <span className="text-orange-300">•</span>
-                        ✨ รับประกันความสดใหม่ 🌿
-                        <span className="text-orange-300">•</span>
-                        🚚 จัดส่งทั่วภูเก็ต 🇹🇭
+                        {t('marqueeText') || "🍎 ผลไม้เกรดพรีเมียม ส่งตรงจากสวน 🚜 • ✨ รับประกันความสดใหม่ 🌿 • 🚚 จัดส่งทั่วภูเก็ต 🇹🇭"}
                         <span className="text-orange-300">•</span>
                         <a 
                             href="https://lin.ee/vRVh8xp" 
@@ -276,7 +274,7 @@ export default function Home() {
                             rel="noopener noreferrer"
                             className="bg-[#06C755] text-white px-3 py-1 rounded-full text-xs font-bold hover:bg-[#05b34c] transition-colors shadow-sm cursor-pointer no-underline flex items-center gap-1"
                         >
-                            💬 Add Line เลย! ✨
+                            {t('addLine') || "💬 Add Line เลย! ✨"}
                         </a>
                     </span>
                 ))}
@@ -311,10 +309,10 @@ export default function Home() {
                     transition={{ delay: 0.2 }}
                 >
                     <h2 className="text-3xl sm:text-6xl font-medium tracking-tight mb-2 leading-tight">
-                        สดใหม่จากสวน
+                        {t('heroBannerTitle') || "สดใหม่จากสวน"}
                     </h2>
                     <p className="text-sm sm:text-xl text-white/90 font-light max-w-md">
-                        คัดสรรผลไม้เกรดพรีเมียม เพื่อสุขภาพที่ดีของคุณ
+                        {t('heroBannerSubtitle') || "คัดสรรผลไม้เกรดพรีเมียม เพื่อสุขภาพที่ดีของคุณ"}
                     </p>
                 </motion.div>
             </div>
@@ -337,12 +335,12 @@ export default function Home() {
         {/* Clean Categories - Grab Style */}
         <section>
             <div className="flex items-baseline justify-between mb-4 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">หมวดหมู่สินค้า</h2>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">{t('categories') || "หมวดหมู่สินค้า"}</h2>
                 <button 
                     onClick={() => setSelectedCategory("ทั้งหมด")}
                     className="text-xs sm:text-sm text-orange-600 font-medium hover:underline"
                 >
-                    ดูทั้งหมด
+                    {t('viewAll') || "ดูทั้งหมด"}
                 </button>
             </div>
             
@@ -397,11 +395,11 @@ export default function Home() {
         <section id="products-section" className="min-h-[50vh]">
             <div className="flex items-center gap-3 mb-6 sm:mb-8">
                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">
-                    {(searchQuery || selectedCategoryFilter) ? "ผลการค้นหา" : "ยอดนิยม"}
+                    {(searchQuery || selectedCategoryFilter) ? (t('searchResults') || "ผลการค้นหา") : (t('popular') || "ยอดนิยม")}
                 </h2>
                 {(searchQuery || selectedCategoryFilter) && (
                      <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs font-medium">
-                        {filteredProducts.length} รายการ
+                        {filteredProducts.length} {t('items') || "รายการ"}
                      </span>
                 )}
             </div>
@@ -435,7 +433,7 @@ export default function Home() {
                                 {item.stock <= 0 && (
                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                                         <span className="bg-white/90 backdrop-blur text-gray-900 px-4 py-2 rounded-lg font-bold text-sm tracking-wide">
-                                            สินค้าหมด
+                                            {t('outOfStock') || "สินค้าหมด"}
                                         </span>
                                     </div>
                                 )}
@@ -449,7 +447,7 @@ export default function Home() {
                                             }}
                                             className="w-full py-3 bg-white/90 backdrop-blur text-gray-900 font-medium text-sm rounded-xl shadow-lg hover:bg-white hover:text-orange-600 hover:shadow-orange-500/20 transition-all"
                                         >
-                                            ดูรายละเอียด
+                                            {t('viewDetails') || "ดูรายละเอียด"}
                                         </button>
                                     </div>
                                 )}
@@ -469,8 +467,8 @@ export default function Home() {
                                     </span>
                                 </div>
                                 <p className="text-sm text-gray-500 font-light flex items-center gap-1">
-                                    {item.farmDirect && <span className="bg-green-50 text-green-700 text-[10px] px-1.5 py-0.5 rounded">จากสวน</span>}
-                                    <span>/ {item.unit || 'กก.'}</span>
+                                    {item.farmDirect && <span className="bg-green-50 text-green-700 text-[10px] px-1.5 py-0.5 rounded">{t('fromFarm') || "จากสวน"}</span>}
+                                    <span>/ {t('perUnit', item.unit || 'กก.')}</span>
                                 </p>
                             </div>
                         </motion.div>
@@ -484,13 +482,13 @@ export default function Home() {
                     <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                         <Search className="w-6 h-6 text-gray-400" />
                     </div>
-                    <p className="text-gray-900 font-medium mb-1">ไม่พบสินค้า</p>
-                    <p className="text-gray-500 text-sm mb-6">ลองค้นหาด้วยคำใหม่</p>
+                    <p className="text-gray-900 font-medium mb-1">{t('noProductsFound') || "ไม่พบสินค้า"}</p>
+                    <p className="text-gray-500 text-sm mb-6">{t('tryNewSearch') || "ลองค้นหาด้วยคำใหม่"}</p>
                     <button 
                         onClick={() => { setSearchQuery(""); setSelectedCategoryFilter(""); }}
                         className="text-sm text-black underline underline-offset-4 hover:text-orange-600 transition-colors"
                     >
-                        ล้างการค้นหา
+                        {t('clearSearch') || "ล้างการค้นหา"}
                     </button>
                 </div>
             )}
@@ -500,7 +498,7 @@ export default function Home() {
         {!(searchQuery || selectedCategoryFilter) && !productsLoading && allProducts.length > 0 && (
             <section className="pt-10 border-t border-gray-100">
                 <div className="flex items-center gap-3 mb-8">
-                    <h2 className="text-2xl font-semibold text-gray-900 tracking-tight">สินค้าทั้งหมด</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900 tracking-tight">{t('allProducts') || "สินค้าทั้งหมด"}</h2>
                 </div>
                 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 gap-y-6 sm:gap-y-10">
@@ -520,7 +518,7 @@ export default function Home() {
                                 {item.stock <= 0 && (
                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                                         <span className="bg-white/90 backdrop-blur text-gray-900 px-3 py-1.5 rounded-lg font-bold text-xs tracking-wide">
-                                            สินค้าหมด
+                                            {t('outOfStock') || "สินค้าหมด"}
                                         </span>
                                     </div>
                                 )}
@@ -540,7 +538,7 @@ export default function Home() {
                                             }}
                                             className="w-full py-3 bg-white/90 backdrop-blur text-gray-900 font-medium text-sm rounded-xl shadow-lg hover:bg-white hover:text-orange-600 hover:shadow-orange-500/20 transition-all"
                                         >
-                                            ดูรายละเอียด
+                                            {t('viewDetails') || "ดูรายละเอียด"}
                                         </button>
                                     </div>
                                 )}
@@ -555,7 +553,7 @@ export default function Home() {
                                     </span>
                                 </div>
                                 <p className="text-sm text-gray-500">
-                                   ต่อ {item.unit || 'กก.'}
+                                   {t('perUnit', item.unit || 'กก.')}
                                 </p>
                             </div>
                         </div>

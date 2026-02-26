@@ -3,9 +3,11 @@ import { useRouter } from "next/router";
 import { EnvelopeIcon, LockClosedIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import Button from "../../components/Button";
 import Modal from "../../components/Modal";
+import { useLanguage } from "../../utils/LanguageContext";
 
 const LoginPage = () => {
     const router = useRouter();
+    const { t } = useLanguage();
 
     const [loginData, setLoginData] = useState({
         email: '',
@@ -69,7 +71,7 @@ const LoginPage = () => {
         e.preventDefault();
         
         if (!loginData.email || !loginData.password) {
-            setError('กรุณากรอกอีเมลและรหัสผ่าน');
+            setError(t('fillEmailPassword'));
             return;
         }
         
@@ -204,10 +206,10 @@ const LoginPage = () => {
                             />
                         </div>
                         <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">
-                            ยินดีต้อนรับ
+                            {t('welcome')}
                         </h1>
                         <p className="text-gray-500 font-medium">
-                            เข้าสู่ระบบเพื่อเข้าถึงสวนผลไม้สดของคุณ
+                            {t('loginSubtitle')}
                         </p>
                     </div>
 
@@ -215,7 +217,7 @@ const LoginPage = () => {
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* Email */}
                         <div className="space-y-2">
-                            <label htmlFor="email" className="block text-sm font-bold text-gray-700 uppercase tracking-wide ml-1">อีเมล</label>
+                            <label htmlFor="email" className="block text-sm font-bold text-gray-700 uppercase tracking-wide ml-1">{t('email')}</label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <EnvelopeIcon className="h-5 w-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
@@ -227,14 +229,14 @@ const LoginPage = () => {
                                     name="email"
                                     value={loginData.email}
                                     onChange={handleChange}
-                                    placeholder="กรอกอีเมลของคุณ" 
+                                    placeholder={t('emailPlaceholder')} 
                                 />
                             </div>
                         </div>
 
                         {/* Password */}
                         <div className="space-y-2">
-                            <label htmlFor="password" className="block text-sm font-bold text-gray-700 uppercase tracking-wide ml-1">รหัสผ่าน</label>
+                            <label htmlFor="password" className="block text-sm font-bold text-gray-700 uppercase tracking-wide ml-1">{t('password')}</label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <LockClosedIcon className="h-5 w-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
@@ -261,7 +263,7 @@ const LoginPage = () => {
                                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                             ) : (
                                 <>
-                                    <span>เข้าสู่ระบบ</span>
+                                    <span>{t('login')}</span>
                                     <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                 </>
                             )}
@@ -274,7 +276,7 @@ const LoginPage = () => {
                             <div className="w-full border-t border-gray-200"></div>
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white/80 backdrop-blur-xl text-gray-500 font-medium">หรือดำเนินการต่อด้วย</span>
+                            <span className="px-4 bg-white/80 backdrop-blur-xl text-gray-500 font-medium">{t('orContinueWith')}</span>
                         </div>
                     </div>
 
@@ -292,7 +294,7 @@ const LoginPage = () => {
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 5.187 18.615.8 12 .8S0 5.187 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.058.898-.018.127-.037.255-.056.38-.021.144-.045.288-.062.436-.02.18.097.361.274.404.179.042.357-.008.501-.095.09-.055.19-.123.281-.187.408-.283.935-.653 1.365-1.05 2.109-.09 4.052-.605 5.646-1.561C22.603 18.892 24 14.789 24 10.314" fill="white"/>
                                 </svg>
-                                <span>เข้าสู่ระบบด้วย LINE</span>
+                                <span>{t('loginWithLine')}</span>
                              </>
                          )}
                     </button>
@@ -300,13 +302,13 @@ const LoginPage = () => {
                     {/* Register Link */}
                     <div className="text-center mt-8">
                         <p className="text-sm text-gray-500 font-medium">
-                            ยังไม่มีบัญชี?{' '}
+                            {t('noAccount')}{' '}
                             <button
                                 type="button"
                                 onClick={() => router.push('/registration/RegisterPage')}
                                 className="text-orange-600 font-bold hover:text-orange-700 hover:underline transition-colors"
                             >
-                                สมัครสมาชิก
+                                {t('register')}
                             </button>
                         </p>
                     </div>
@@ -318,9 +320,9 @@ const LoginPage = () => {
                 isOpen={!!error}
                 onClose={() => setError('')}
                 type="error"
-                title="เข้าสู่ระบบไม่สำเร็จ"
+                title={t('loginFailed')}
                 message={error}
-                buttonText="ปิด"
+                buttonText={t('close')}
             />
         </div>
     );
