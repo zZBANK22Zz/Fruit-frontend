@@ -185,40 +185,190 @@ const FLOW_NODES = (t) => [
 ];
 
 const SCENARIOS = (t) => [
+  // Home + product listing (Overview / Structure)
   {
-    tab: `📋 ${t('scenGetProductsTitle') || 'GET สินค้า'}`, method: "GET", path: "/api/fruits", color: "#3fb950",
+    tab: `📋 ${t('scenHomeAndProductsTitle') || 'หน้าแรก + สินค้า'}`,
+    method: "GET",
+    path: "/api/categories + /api/fruits",
+    color: "#3fb950",
     steps: [
-      { action: t('scenGetProductsStep1Action') || "ผู้ใช้เปิดหน้าเว็บ",            data: "window.location → /",                    note: t('scenGetProductsStep1Note') || "Public route ไม่ต้อง login" },
-      { action: t('scenGetProductsStep2Action') || "loadProducts() ใน useEffect",  data: "fetch(`${API_URL}/api/fruits`)",         note: "pages/index.js" },
-      { action: t('scenGetProductsStep3Action') || "Express รับ GET /api/fruits",  data: "app.use('/api/fruits', fruitRoutes)",     note: "server.js" },
-      { action: t('scenGetProductsStep4Action') || "Public Route → ผ่านเลย ✓",    data: t('scenGetProductsStep4Data') || "ไม่ต้องตรวจ Token",                       note: t('scenGetProductsStep4Note') || "fruitRoutes ไม่มี authMiddleware" },
-      { action: "fruitController.getAllFruits", data: "req.query: { category, search }",         note: "controller/fruitController.js" },
-      { action: "fruitModel.getAll()",          data: "SELECT * FROM fruits JOIN categories",    note: "model/fruitModel.js" },
-      { action: t('scenGetProductsStep7Action') || "DB ส่ง rows กลับ",             data: "[{id, name, price, image_base64, ...}]", note: t('scenGetProductsStep7Note') || "JSON 200 OK → Frontend แสดงผล" },
+      { action: t('scenHomeAndProductsStep1Action') || "ผู้ใช้เปิดหน้าเว็บ", data: "window.location → /", note: t('scenHomeAndProductsStep1Note') || "Public route ไม่ต้อง login" },
+      { action: t('scenHomeAndProductsStep2Action') || "useEffect() ใน pages/index.js", data: "loadCategories() + loadProducts()", note: "pages/index.js" },
+      { action: t('scenHomeAndProductsStep3Action') || "Frontend อ่าน NEXT_PUBLIC_API_BACKEND", data: "const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND", note: "pages/index.js" },
+      { action: t('scenHomeAndProductsStep4Action') || "ดึงหมวดหมู่", data: "GET `${apiUrl}/api/categories`", note: "backend/app/routes/categoryRoutes.js" },
+      { action: t('scenHomeAndProductsStep5Action') || "ดึงรายการผลไม้", data: "GET `${apiUrl}/api/fruits`", note: "backend/app/routes/fruitRoutes.js" },
+      { action: t('scenHomeAndProductsStep6Action') || "Controller + Model query DB", data: "SELECT * FROM fruits / categories", note: "controller + model" },
+      { action: t('scenHomeAndProductsStep7Action') || "ส่ง JSON กลับ → แสดงผล", data: "[{id, name, price, image, ...}]", note: t('scenHomeAndProductsStep7Note') || "Frontend แสดงหมวดหมู่ + grid สินค้า" },
     ],
   },
+
+  // Popular products (Home feature)
   {
-    tab: `🛒 ${t('scenOrderTitle') || 'สั่งซื้อ'}`, method: "POST", path: "/api/orders", color: "#f97316",
+    tab: `⚡ ${t('scenPopularTitle') || 'ยอดนิยม (Most Bought)'}`,
+    method: "GET",
+    path: "/api/orders/most-bought?limit=5",
+    color: "#facc15",
     steps: [
-      { action: t('scenOrderStep1Action') || "กด 'ยืนยันคำสั่งซื้อ'",              data: "{ items, address_id, notes }",                   note: "cart/index.js" },
-      { action: t('scenOrderStep2Action') || "ส่ง POST พร้อม JWT Token",          data: "Authorization: Bearer eyJ...",                  note: t('scenOrderStep2Note') || "token จาก localStorage" },
-      { action: t('scenOrderStep3Action') || "Express จับ route",                 data: "router.post('/', authMiddleware, createOrder)",  note: "routes/orderRoutes.js" },
-      { action: "jwt.verify(token, JWT_SECRET)",     data: "req.user = { id:42, role:'user' }",             note: "middleware/authMiddleware.js" },
-      { action: t('scenOrderStep5Action') || "ตรวจสต็อก + คำนวณราคา",            data: "totalAmount + deliveryFee (Google Maps)",       note: "controller/orderController.js" },
-      { action: "INSERT INTO orders, order_items",  data: "BEGIN → INSERT → COMMIT",                       note: "model/orderModel.js" },
-      { action: t('scenOrderStep7Action') || "บันทึกสำเร็จ",                      data: "{ order_number: 'ORD-2025-0222-42' }",          note: "201 Created → response" },
+      { action: t('scenPopularStep1Action') || "หน้าแรกเรียก loadPopular()", data: "useEffect() → loadPopular()", note: "pages/index.js" },
+      { action: t('scenPopularStep2Action') || "สร้าง URL สำหรับ API", data: "const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND", note: "pages/index.js" },
+      { action: t('scenPopularStep3Action') || "ยิง request แบบ public", data: "GET `${apiUrl}/api/orders/most-bought?limit=5`", note: t('scenPopularStep3Note') || "Endpoint นี้ไม่ต้องส่ง JWT" },
+      { action: t('scenPopularStep4Action') || "Express รับ route", data: "app.use('/api/orders', orderRoutes)", note: "backend/server.js" },
+      { action: t('scenPopularStep5Action') || "OrderController.aggregateMostBought()", data: "JOIN orders + order_items + fruits", note: "controller/orderController.js" },
+      { action: t('scenPopularStep6Action') || "คืนค่า products ยอดนิยม", data: "{ products: [{ id, name, price, image, unit, stock }] }", note: t('scenPopularStep6Note') || "Frontend เอาไปแสดงในส่วน \"ยอดนิยม\"" },
+      { action: t('scenPopularStep7Action') || "Frontend render การ์ดสินค้า", data: "popularFruits grid", note: "pages/index.js" },
     ],
   },
+
+  // Auth: Register
   {
-    tab: `💳 ${t('scenUploadSlipTitle') || 'อัพสลิป'}`, method: "POST", path: "/api/orders/:id/upload-slip", color: "#58a6ff",
+    tab: `📝 ${t('scenRegisterTitle') || 'สมัครสมาชิก'}`,
+    method: "POST",
+    path: "/api/auth/register",
+    color: "#3b82f6",
     steps: [
-      { action: t('scenUploadSlipStep1Action') || "ถ่ายรูปสลิป + อัพโหลด",             data: "{ image: base64, amount: 350 }",                     note: "payment/index.js" },
-      { action: "POST /api/orders/42/upload-slip",  data: "+ Authorization: Bearer eyJ...",                     note: t('scenUploadSlipStep2Note') || "พร้อม JWT Token" },
-      { action: "router.post('/:id/upload-slip')",  data: "authMiddleware → uploadPaymentSlip",                 note: "routes/orderRoutes.js" },
-      { action: t('scenUploadSlipStep4Action') || "ตรวจว่าเป็นเจ้าของออร์เดอร์",      data: "order.user_id === req.user.id",                      note: t('scenUploadSlipStep4Note') || "403 Forbidden ถ้าไม่ใช่" },
-      { action: t('scenUploadSlipStep5Action') || "บันทึก slip + อัพสถานะ paid",       data: "createPaymentSlip() + updateOrderStatus('paid')",    note: "DB Transaction" },
-      { action: "INSERT payment_slips + invoices",  data: "generateInvoice() + notifyAdmins()",                 note: t('scenUploadSlipStep6Note') || "model หลายตัว" },
-      { action: t('scenUploadSlipStep7Action') || "ส่ง LINE Notify + response",        data: "LineMessagingService.sendPaymentConfirmation()",     note: "201 Created" },
+      { action: t('scenRegisterStep1Action') || "ผู้ใช้เปิดหน้า Register", data: "window.location → /registration", note: "pages/registration/" },
+      { action: t('scenRegisterStep2Action') || "กรอกฟอร์มสมัครสมาชิก", data: "{ username, email, password, ... }", note: "RegistrationForm component" },
+      { action: t('scenRegisterStep3Action') || "Frontend สร้าง URL", data: "const apiUrl = process.env.NEXT_PUBLIC_API_BACKEND", note: "pages/registration/" },
+      { action: t('scenRegisterStep4Action') || "ส่ง POST สมัครสมาชิก", data: "POST `${apiUrl}/api/auth/register`", note: "backend/app/routes/authRoutes.js" },
+      { action: t('scenRegisterStep5Action') || "Controller เข้ารหัสรหัสผ่าน", data: "bcrypt.hash(password)", note: "authController.js" },
+      { action: t('scenRegisterStep6Action') || "Model บันทึก user ลง DB", data: "INSERT INTO users (...)", note: "userModel.js" },
+      { action: t('scenRegisterStep7Action') || "ตอบกลับพร้อม JWT", data: "{ token, user } 201 Created", note: t('scenRegisterStep7Note') || "Frontend เก็บ token ใน localStorage แล้ว redirect" },
+    ],
+  },
+
+  // Auth: Email login
+  {
+    tab: `🔐 ${t('scenLoginTitle') || 'เข้าสู่ระบบ (Email)'}`,
+    method: "POST",
+    path: "/api/auth/login",
+    color: "#22c55e",
+    steps: [
+      { action: t('scenLoginStep1Action') || "ผู้ใช้กรอก email + password", data: "{ email, password }", note: "pages/registration/ หรือ modal" },
+      { action: t('scenLoginStep2Action') || "Frontend ส่ง POST", data: "POST `${apiUrl}/api/auth/login`", note: "backend/app/routes/authRoutes.js" },
+      { action: t('scenLoginStep3Action') || "Controller ตรวจ user", data: "SELECT * FROM users WHERE email = ?", note: "authController.js" },
+      { action: t('scenLoginStep4Action') || "ตรวจรหัสผ่าน", data: "bcrypt.compare(plain, hashed)", note: "authController.js" },
+      { action: t('scenLoginStep5Action') || "ออก JWT Token", data: "jwt.sign({ id, role, ... }, JWT_SECRET)", note: "authController.js" },
+      { action: t('scenLoginStep6Action') || "ส่ง token กลับ", data: "{ token, user } 200 OK", note: t('scenLoginStep6Note') || "Frontend เก็บ token + อัพเดท state ผู้ใช้" },
+      { action: t('scenLoginStep7Action') || "Request ถัดไปแนบ Authorization", data: "Authorization: Bearer <token>", note: "ทุก endpoint ที่ต้อง auth" },
+    ],
+  },
+
+  // Orders: create order (Order Flow)
+  {
+    tab: `🛒 ${t('scenOrderTitle') || 'สั่งซื้อ'}`,
+    method: "POST",
+    path: "/api/orders",
+    color: "#f97316",
+    steps: [
+      { action: t('scenOrderStep1Action') || "กด 'ยืนยันคำสั่งซื้อ'", data: "{ items, address_id, notes }", note: "cart/index.js" },
+      { action: t('scenOrderStep2Action') || "ส่ง POST พร้อม JWT Token", data: "Authorization: Bearer eyJ...", note: t('scenOrderStep2Note') || "token จาก localStorage" },
+      { action: t('scenOrderStep3Action') || "Express จับ route", data: "router.post('/', authMiddleware, createOrder)", note: "routes/orderRoutes.js" },
+      { action: "jwt.verify(token, JWT_SECRET)", data: "req.user = { id:42, role:'user' }", note: "middleware/authMiddleware.js" },
+      { action: t('scenOrderStep5Action') || "ตรวจสต็อก + คำนวณราคา", data: "totalAmount + deliveryFee (Google Maps)", note: "controller/orderController.js" },
+      { action: "INSERT INTO orders, order_items", data: "BEGIN → INSERT → COMMIT", note: "model/orderModel.js" },
+      { action: t('scenOrderStep7Action') || "บันทึกสำเร็จ", data: "{ order_number: 'ORD-2025-0222-42' }", note: "201 Created → response" },
+    ],
+  },
+
+  // Orders: my orders list
+  {
+    tab: `📦 ${t('scenMyOrdersTitle') || 'ดูออร์เดอร์ของฉัน'}`,
+    method: "GET",
+    path: "/api/orders/my-orders",
+    color: "#0ea5e9",
+    steps: [
+      { action: t('scenMyOrdersStep1Action') || "ผู้ใช้เปิดหน้าออร์เดอร์", data: "window.location → /bills หรือ /orders", note: "pages/bills/ หรือ orders page" },
+      { action: t('scenMyOrdersStep2Action') || "Frontend แนบ JWT", data: "Authorization: Bearer <token>", note: "token จาก localStorage" },
+      { action: t('scenMyOrdersStep3Action') || "ส่ง GET /api/orders/my-orders", data: "GET `${apiUrl}/api/orders/my-orders`", note: "routes/orderRoutes.js" },
+      { action: t('scenMyOrdersStep4Action') || "authMiddleware ตรวจสิทธิ์", data: "req.user.id จาก JWT", note: "middleware/authMiddleware.js" },
+      { action: t('scenMyOrdersStep5Action') || "Controller ดึงออร์เดอร์ของ user", data: "SELECT * FROM orders WHERE user_id = req.user.id", note: "orderController.js" },
+      { action: t('scenMyOrdersStep6Action') || "รวม order_items / invoices", data: "JOIN orders + order_items + invoices", note: "orderModel.js" },
+      { action: t('scenMyOrdersStep7Action') || "ส่ง JSON กลับให้ UI", data: "[{ order_number, status, total_amount, ... }]", note: t('scenMyOrdersStep7Note') || "Frontend แสดงลิสต์ออร์เดอร์ในโปรไฟล์" },
+    ],
+  },
+
+  // Payment: QR PromptPay
+  {
+    tab: `💳 ${t('scenQRTitle') || 'ขอ QR PromptPay'}`,
+    method: "GET",
+    path: "/api/orders/:id/qr-code",
+    color: "#a855f7",
+    steps: [
+      { action: t('scenQRStep1Action') || "ผู้ใช้สร้างออร์เดอร์เสร็จ", data: "ได้รับ order_id", note: "หลัง POST /api/orders" },
+      { action: t('scenQRStep2Action') || "Frontend ขอ QR Code", data: "GET `${apiUrl}/api/orders/:id/qr-code`", note: "payment/index.js" },
+      { action: t('scenQRStep3Action') || "ตรวจ JWT", data: "authMiddleware → jwt.verify()", note: "middleware/authMiddleware.js" },
+      { action: t('scenQRStep4Action') || "OrderController เรียก QRPromptPayService", data: "generateQRCodeForOrder(order)", note: "qrPromptPayService.js" },
+      { action: t('scenQRStep5Action') || "Service สร้าง payload PromptPay", data: "generatePayload(PROMPTPAY_PHONE, { amount })", note: "promptpay-qr" },
+      { action: t('scenQRStep6Action') || "แปลงเป็น QR image", data: "QRCode.toDataURL(payload)", note: "qrPromptPayService.js" },
+      { action: t('scenQRStep7Action') || "ส่งข้อมูลกลับให้ Frontend", data: "{ qrCodeDataURL, payload, phoneNumber }", note: t('scenQRStep7Note') || "Frontend แสดง QR ให้สแกน" },
+    ],
+  },
+
+  // Payment: upload slip (Payment / PDF / LINE)
+  {
+    tab: `🧾 ${t('scenUploadSlipTitle') || 'อัพสลิป'}`,
+    method: "POST",
+    path: "/api/orders/:id/upload-slip",
+    color: "#58a6ff",
+    steps: [
+      { action: t('scenUploadSlipStep1Action') || "ถ่ายรูปสลิป + อัพโหลด", data: "{ image: base64, amount: 350 }", note: "payment/index.js" },
+      { action: t('scenUploadSlipStep2Action') || "ส่ง POST พร้อม JWT", data: "POST `${apiUrl}/api/orders/:id/upload-slip` + Authorization header", note: "routes/orderRoutes.js" },
+      { action: t('scenUploadSlipStep3Action') || "authMiddleware ตรวจสิทธิ์", data: "เช็คว่า token valid", note: "middleware/authMiddleware.js" },
+      { action: t('scenUploadSlipStep4Action') || "ตรวจว่าเป็นเจ้าของออร์เดอร์", data: "order.user_id === req.user.id", note: t('scenUploadSlipStep4Note') || "403 Forbidden ถ้าไม่ใช่" },
+      { action: t('scenUploadSlipStep5Action') || "บันทึก slip + อัพสถานะ paid", data: "createPaymentSlip() + updateOrderStatus('paid')", note: "DB Transaction" },
+      { action: t('scenUploadSlipStep6Action') || "สร้าง Invoice + บันทึกลง DB", data: "INSERT payment_slips + invoices", note: "invoiceModel.js" },
+      { action: t('scenUploadSlipStep7Action') || "ส่ง LINE Notify + response", data: "LineMessagingService.sendPaymentConfirmation()", note: "201 Created" },
+    ],
+  },
+
+  // Delivery fee calculation
+  {
+    tab: `🚚 ${t('scenDeliveryTitle') || 'คำนวณค่าส่ง'}`,
+    method: "POST",
+    path: "/api/delivery/calculate",
+    color: "#f97316",
+    steps: [
+      { action: t('scenDeliveryStep1Action') || "ผู้ใช้กรอกหรือเลือกที่อยู่จัดส่ง", data: "{ address_line, district, province, ... }", note: "checkout page" },
+      { action: t('scenDeliveryStep2Action') || "Frontend ส่ง POST", data: "POST `${apiUrl}/api/delivery/calculate`", note: "deliveryService frontend call" },
+      { action: t('scenDeliveryStep3Action') || "Express จับ route", data: "app.post('/api/delivery/calculate', DeliveryController.calculateFee)", note: "backend/server.js" },
+      { action: t('scenDeliveryStep4Action') || "Service เรียก Google APIs", data: "Geocoding + Distance Matrix", note: "googleMapsService.js" },
+      { action: t('scenDeliveryStep5Action') || "คำนวณราคาค่าส่ง", data: "deliveryFee = f(distance, totalWeight)", note: "deliveryService.js" },
+      { action: t('scenDeliveryStep6Action') || "ตอบกลับให้ Frontend", data: "{ deliveryFee, distanceKm, durationText }", note: t('scenDeliveryStep6Note') || "แสดงค่าส่งใน Summary" },
+      { action: t('scenDeliveryStep7Action') || "รวมค่าส่งในยอดชำระ", data: "order.total_amount + deliveryFee", note: "orderController.js" },
+    ],
+  },
+
+  // Invoice PDF download
+  {
+    tab: `📄 ${t('scenInvoiceTitle') || 'ดาวน์โหลด Invoice PDF'}`,
+    method: "GET",
+    path: "/api/invoices/:id/pdf",
+    color: "#6366f1",
+    steps: [
+      { action: t('scenInvoiceStep1Action') || "ผู้ใช้เปิดหน้าประวัติออร์เดอร์", data: "คลิกปุ่มดาวน์โหลดใบเสร็จ", note: "bills/history page" },
+      { action: t('scenInvoiceStep2Action') || "Frontend แนบ JWT", data: "Authorization: Bearer <token>", note: "protected endpoint" },
+      { action: t('scenInvoiceStep3Action') || "ส่ง GET /api/invoices/:id/pdf", data: "GET `${apiUrl}/api/invoices/:id/pdf`", note: "routes/invoiceRoutes.js" },
+      { action: t('scenInvoiceStep4Action') || "Controller ดึงข้อมูล invoice", data: "SELECT * FROM invoices JOIN orders + users", note: "invoiceController.js" },
+      { action: t('scenInvoiceStep5Action') || "PDFService.generateInvoicePDF()", data: "ใช้ PDFKit + thaiFont", note: "pdfService.js" },
+      { action: t('scenInvoiceStep6Action') || "ส่งไฟล์ PDF กลับ", data: "Content-Type: application/pdf", note: t('scenInvoiceStep6Note') || "Browser ดาวน์โหลดหรือเปิดในแท็บใหม่" },
+      { action: t('scenInvoiceStep7Action') || "ผู้ใช้เก็บใบเสร็จไว้เป็นหลักฐาน", data: "local download / print", note: "No DB change" },
+    ],
+  },
+
+  // LINE notification
+  {
+    tab: `💬 ${t('scenLineNotifyTitle') || 'LINE Notify'}`,
+    method: "POST",
+    path: "LINE Messaging API",
+    color: "#06C755",
+    steps: [
+      { action: t('scenLineNotifyStep1Action') || "สถานะออร์เดอร์เปลี่ยนเป็น paid", data: "หลังอัพสลิป / แอดมินยืนยัน", note: "orderController.js" },
+      { action: t('scenLineNotifyStep2Action') || "Backend เตรียมข้อความ", data: "{ to: line_user_id, message: ... }", note: "LineMessagingService" },
+      { action: t('scenLineNotifyStep3Action') || "อ่าน LINE_CHANNEL_ACCESS_TOKEN", data: "process.env.LINE_CHANNEL_ACCESS_TOKEN", note: ".env" },
+      { action: t('scenLineNotifyStep4Action') || "ส่ง POST ไป LINE Messaging API", data: "https://api.line.me/v2/bot/message/push", note: "Authorization: Bearer <channel_access_token>" },
+      { action: t('scenLineNotifyStep5Action') || "LINE ส่งข้อความให้ผู้ใช้", data: "User receives notification in LINE app", note: t('scenLineNotifyStep5Note') || "ไม่มีผลกับ DB" },
+      { action: t('scenLineNotifyStep6Action') || "บันทึก notification ในระบบ (ถ้ามี)", data: "INSERT INTO notifications (...) optional", note: "notificationModel.js" },
+      { action: t('scenLineNotifyStep7Action') || "Backend ตอบกลับ 200 OK", data: "{ success: true }", note: "Webhook / internal call" },
     ],
   },
 ];
@@ -227,6 +377,7 @@ const SCENARIOS = (t) => [
 function SystemFlowSection() {
   const { t } = useLanguage();
   const scenariosData = SCENARIOS(t);
+  const flowNodes = FLOW_NODES(t);
   const [scenarioIdx, setScenarioIdx] = useState(0);
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -265,10 +416,10 @@ function SystemFlowSection() {
       <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 20 }}>
         {/* Left: flow nodes */}
         <div>
-          {FLOW_NODES.map((node, i) => {
+          {flowNodes.map((node, i) => {
             const isActive = i === step && !isDone;
             const isPast   = i < step || isDone;
-            const isLast   = i === FLOW_NODES.length - 1;
+            const isLast   = i === flowNodes.length - 1;
             return (
               <div key={i}>
                 <div style={{
@@ -351,7 +502,7 @@ function SystemFlowSection() {
             </button>
             <button onClick={() => setStep(s => Math.max(0, s - 1))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface, color: C.muted, cursor: "pointer", fontSize: 12 }}>◀</button>
             <button onClick={() => setStep(s => Math.min(total - 1, s + 1))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface, color: C.muted, cursor: "pointer", fontSize: 12 }}>▶</button>
-            <span style={{ color: C.muted, fontSize: 11 }}>Step {Math.min(step + 1, FLOW_NODES(t).length)} / {FLOW_NODES(t).length}</span>
+            <span style={{ color: C.muted, fontSize: 11 }}>Step {Math.min(step + 1, flowNodes.length)} / {flowNodes.length}</span>
           </div>
         </div>
       </div>
