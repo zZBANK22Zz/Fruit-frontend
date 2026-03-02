@@ -239,6 +239,10 @@ const translations = {
     transferDate: "วันที่โอน",
     customerNotes: "หมายเหตุจากลูกค้า",
     closeWindow: "ปิดหน้าต่าง",
+    orderDetailTitle: "รายละเอียดออเดอร์",
+    orderItems: "รายการสินค้า",
+    shippingAddress: "ที่อยู่การจัดส่ง",
+
 
     // ─── Admin Products Page ───────────────────
     noAccessTitle: "ไม่มีสิทธิ์เข้าถึง",
@@ -1220,6 +1224,11 @@ const translations = {
     tryAgain: "Try Again",
     goToLogin: "Go to Login",
     backButton: "Back",
+
+    // ─── Admin Orders Page ─────────────────────────
+    orderDetailTitle: "Order Detail",
+    orderItems: "Order Items",
+    shippingAddress: "Shipping Address",
   },
 };
 

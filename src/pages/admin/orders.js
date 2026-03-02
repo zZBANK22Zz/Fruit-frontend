@@ -41,6 +41,11 @@ export default function AdminOrdersPage() {
   const [isSlipLoading, setIsSlipLoading] = useState(false);
   const [downloadLoading, setDownloadLoading] = useState(false);
 
+  // Order Detail Modal states
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedOrderDetail, setSelectedOrderDetail] = useState(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+
   // Image Zoom State
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [zoomedImageSrc, setZoomedImageSrc] = useState(null);
@@ -215,6 +220,20 @@ export default function AdminOrdersPage() {
       notifyError(t('errorOccurred') || 'เกิดข้อผิดพลาด', t('cannotLoadSlip') || 'ไม่สามารถโหลดหลักฐานการโอนได้');
     } finally {
       setIsSlipLoading(false);
+    }
+  };
+
+  const handleViewOrderDetail = async (orderId) => {
+    setIsDetailModalOpen(true);
+    setIsDetailLoading(true);
+    try {
+      const detail = await fetchOrderById(orderId);
+      setSelectedOrderDetail(detail);
+    } catch (error) {
+      console.error('Error loading order details:', error);
+      notifyError(t('errorOccurred') || 'เกิดข้อผิดพลาด', t('cannotLoadOrderDetail') || 'ไม่สามารถโหลดรายละเอียดออเดอร์ได้');
+    } finally {
+      setIsDetailLoading(false);
     }
   };
 
@@ -433,6 +452,13 @@ export default function AdminOrdersPage() {
                             >
                               <PhotoIcon className="w-5 h-5" />
                             </button>
+                            <button
+                              onClick={() => handleViewOrderDetail(order.id)}
+                              className="p-2 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors"
+                              title={t('viewOrderDetail') || 'ดูรายละเอียดออเดอร์'}
+                            >
+                              <ChevronRightIcon className="w-5 h-5" />
+                            </button>
                             {(order.order_status === 'delivering' || order.status === 'delivering') && order.delivery_qr_code && (
                               <button
                                 onClick={() => {
@@ -507,6 +533,13 @@ export default function AdminOrdersPage() {
                         <PhotoIcon className="w-5 h-5" />
                         <span>{t('viewSlip') || 'ดูสลิป'}</span>
                       </button>
+                      <button
+                        onClick={() => handleViewOrderDetail(order.id)}
+                        className="shrink-0 p-3 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-2 font-bold"
+                      >
+                        <ChevronRightIcon className="w-5 h-5" />
+                        <span>{t('viewOrderDetail') || 'รายละเอียด'}</span>
+                      </button>
                       {(order.order_status === 'delivering' || order.status === 'delivering') && order.delivery_qr_code && (
                         <button
                           onClick={() => {
@@ -565,9 +598,206 @@ export default function AdminOrdersPage() {
         isSubmitting={isSubmitting}
       />
 
+      {/* Order Detail Modal */}
+      {isDetailModalOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="text-xl font-black text-gray-900">{t('orderDetailTitle') || 'รายละเอียดออเดอร์'}</h3>
+                {selectedOrderDetail && (
+                  <p className="text-sm text-gray-500 font-bold">
+                    #{selectedOrderDetail.order_number}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setIsDetailModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {isDetailLoading ? (
+                <div className="py-16 flex flex-col items-center justify-center">
+                  <OrangeSpinner className="w-12 h-12 mb-4" />
+                  <p className="text-gray-500 font-bold italic">
+                    {t('loadingOrderDetail') || 'กำลังโหลดรายละเอียดออเดอร์...'}
+                  </p>
+                </div>
+              ) : selectedOrderDetail ? (
+                <div className="space-y-6">
+                  {/* Top summary (customer + status/time) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-1">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        {t('customerHeader') || 'ลูกค้า'}
+                      </p>
+                      <p className="text-sm font-black text-gray-900">
+                        {selectedOrderDetail.username || t('unknownCustomer') || 'ไม่ทราบชื่อลูกค้า'}
+                      </p>
+                      {selectedOrderDetail.email && (
+                        <p className="text-xs font-medium text-gray-500 break-all">
+                          {selectedOrderDetail.email}
+                        </p>
+                      )}
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-1">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        {t('statusHeader') || 'สถานะ'}
+                      </p>
+                      <span
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-black shadow-sm ${getStatusColor(
+                          selectedOrderDetail.order_status || selectedOrderDetail.status
+                        )}`}
+                      >
+                        {getStatusLabel(selectedOrderDetail.order_status || selectedOrderDetail.status)}
+                      </span>
+                      <p className="text-xs font-medium text-gray-500 mt-2">
+                        {new Date(selectedOrderDetail.created_at).toLocaleString('th-TH', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Items list (primary section) */}
+                  {Array.isArray(selectedOrderDetail.items) && selectedOrderDetail.items.length > 0 && (
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                        {t('orderItems') || 'รายการสินค้า'}
+                      </p>
+                      <div className="space-y-3">
+                        {selectedOrderDetail.items.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between gap-3 bg-gray-50/70 rounded-xl px-3 py-2"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              {item.fruit_image ? (
+                                <img
+                                  src={`data:image/jpeg;base64,${item.fruit_image}`}
+                                  alt={item.fruit_name || 'Fruit'}
+                                  className="w-10 h-10 rounded-xl object-cover border border-gray-200"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-xl bg-gray-200 border border-gray-200 flex items-center justify-center text-xs font-black text-gray-500">
+                                  {t('noImageShort') || 'NO'}
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold text-gray-900 truncate">
+                                  {item.fruit_name || t('unknownProduct') || 'ไม่ทราบชื่อสินค้า'}
+                                </p>
+                                <p className="text-xs text-gray-500 font-medium">
+                                  x{item.quantity} · ฿{parseFloat(item.price).toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-black text-gray-900">
+                                ฿{parseFloat(item.subtotal).toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Shipping info (secondary section) */}
+                  {(selectedOrderDetail.shipping_address ||
+                    selectedOrderDetail.shipping_city ||
+                    selectedOrderDetail.shipping_postal_code ||
+                    selectedOrderDetail.shipping_country) && (
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                        {t('shippingAddress') || 'ที่อยู่จัดส่ง'}
+                      </p>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {selectedOrderDetail.shipping_address && (
+                          <span>{selectedOrderDetail.shipping_address}</span>
+                        )}
+                        {(selectedOrderDetail.shipping_city ||
+                          selectedOrderDetail.shipping_postal_code ||
+                          selectedOrderDetail.shipping_country) && (
+                          <>
+                            <br />
+                            <span>
+                              {[selectedOrderDetail.shipping_city, selectedOrderDetail.shipping_postal_code]
+                                .filter(Boolean)
+                                .join(' ')}
+                            </span>
+                            {selectedOrderDetail.shipping_country && (
+                              <>
+                                <br />
+                                <span>{selectedOrderDetail.shipping_country}</span>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Notes and totals */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                    {selectedOrderDetail.notes && (
+                      <div className="bg-orange-50/60 p-4 rounded-2xl border border-orange-100">
+                        <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">
+                          {t('customerNotes') || 'หมายเหตุจากลูกค้า'}
+                        </p>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {selectedOrderDetail.notes}
+                        </p>
+                      </div>
+                    )}
+                    <div className="bg-gray-900 text-white p-4 rounded-2xl shadow-lg space-y-1">
+                      <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">
+                        {t('totalHeader') || 'ยอดรวม'}
+                      </p>
+                      <p className="text-2xl font-black">
+                        ฿{parseFloat(selectedOrderDetail.total_amount).toFixed(2)}
+                      </p>
+                      {selectedOrderDetail.payment_method && (
+                        <p className="text-xs font-medium text-gray-300 mt-1">
+                          {t('paymentMethod') || 'ช่องทางชำระเงิน'}: {selectedOrderDetail.payment_method}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 font-medium">
+                  {t('noOrderDetail') || 'ไม่พบรายละเอียดออเดอร์'}
+                </p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-100 bg-gray-50/50">
+              <button
+                onClick={() => setIsDetailModalOpen(false)}
+                className="w-full py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95"
+              >
+                {t('closeWindow') || 'ปิดหน้าต่าง'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Payment Slip Modal for Admin */}
       {isSlipModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -668,7 +898,7 @@ export default function AdminOrdersPage() {
 
       {/* QR Code Modal for Rider Dispatch */}
       {isQRModalOpen && selectedOrderForQR && qrCodeUrl && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-indigo-50/50">
               <div>
